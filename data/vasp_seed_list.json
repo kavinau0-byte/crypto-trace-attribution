@@ -1,0 +1,17 @@
+{
+  "_comment": "SIH26182 Curated VASP Seed List Scaffold (To be populated in Day 3-4)",
+  "_description": "Contains known public exchange, custodian, and OTC broker wallet addresses for attribution matching. Note: This is a curated demo seed list for hackathon evaluation, not exhaustive global coverage.",
+  "_schema": {
+    "vasp_name": "Entity name (e.g., Binance, Coinbase, Kraken)",
+    "category": "exchange | custodian | mixer | payment_processor",
+    "addresses": [
+      {
+        "address": "Bitcoin Base58 or Bech32 address",
+        "tag": "deposit | cold_wallet | hot_wallet | withdrawal",
+        "source": "Public disclosure / blockchain forensics publication / verified exchange proof-of-reserves",
+        "confidence_base": 0.95
+      }
+    ]
+  },
+  "vasps": []
+}
