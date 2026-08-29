@@ -104,10 +104,11 @@ def trace_hops(
             # Check if current_addr is among the inputs (i.e. sending funds out)
             is_spender = any(inp.get("address") == current_addr for inp in inputs)
             
-            # If current_addr is the seed address and has no spends yet, or is an input spender:
-            # We follow outbound flows from transactions where current_addr transferred value
-            if not is_spender and current_addr != clean_seed:
-                # If not an input spender and not the seed, this transaction was an inbound receipt
+            # Only follow transactions where current_addr actually spent funds (was an input).
+            # This applies uniformly to the seed address too -- if the seed only ever received
+            # money in a given tx, we must not treat that tx's other outputs as downstream hops,
+            # since the seed never sent that money anywhere.
+            if not is_spender:
                 continue
 
             branches_count = 0
