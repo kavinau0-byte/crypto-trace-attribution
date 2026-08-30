@@ -1,17 +1,236 @@
 {
-  "_comment": "SIH26182 Curated VASP Seed List Scaffold (To be populated in Day 3-4)",
-  "_description": "Contains known public exchange, custodian, and OTC broker wallet addresses for attribution matching. Note: This is a curated demo seed list for hackathon evaluation, not exhaustive global coverage.",
-  "_schema": {
-    "vasp_name": "Entity name (e.g., Binance, Coinbase, Kraken)",
-    "category": "exchange | custodian | mixer | payment_processor",
-    "addresses": [
-      {
-        "address": "Bitcoin Base58 or Bech32 address",
-        "tag": "deposit | cold_wallet | hot_wallet | withdrawal",
-        "source": "Public disclosure / blockchain forensics publication / verified exchange proof-of-reserves",
-        "confidence_base": 0.95
-      }
-    ]
-  },
-  "vasps": []
+  "_comment": "This is a small curated seed list for hackathon demo purposes only. It does NOT represent complete or comprehensive VASP address coverage. Addresses are sourced from public forensics trackers and disclosures as cited per-entry.",
+  "entries": [
+    {
+      "address": "34xp4vRoCGJym3xR7yCVPFHoCNxv4Twseo",
+      "vasp_name": "Binance",
+      "source": "Binance official Proof-of-Reserves public disclosure & BitInfoCharts Top 100 entity label",
+      "confidence": "high",
+      "notes": "Binance cold storage reserve wallet"
+    },
+    {
+      "address": "bc1qm34lsc65zpw79lxes69zkqmk6ee3ewf0j77s3h",
+      "vasp_name": "Binance",
+      "source": "Binance official Proof-of-Reserves & Dune Analytics verified exchange entities",
+      "confidence": "high",
+      "notes": "Binance hot / reserve wallet"
+    },
+    {
+      "address": "1NDyJtNTjmwk5xPNhjgAMu4HDHigtobu1s",
+      "vasp_name": "Binance",
+      "source": "WalletExplorer.com entity label (Binance.com) & BitInfoCharts",
+      "confidence": "medium",
+      "notes": "Binance high-volume hot wallet"
+    },
+    {
+      "address": "bc1qcgmpzx2pww9h3g9slxwzjqrztv7fy4t0lkye99",
+      "vasp_name": "Binance",
+      "source": "WalletExplorer.com entity label (Binance.com)",
+      "confidence": "medium",
+      "notes": "Binance deposit / sweep address"
+    },
+    {
+      "address": "3D2oetdNuZUqQHPJmcMDDHYoqkyNVsFk9r",
+      "vasp_name": "Bitfinex",
+      "source": "Bitfinex publicly disclosed cold wallet & BitInfoCharts Top 100",
+      "confidence": "high",
+      "notes": "Bitfinex multi-signature cold storage wallet"
+    },
+    {
+      "address": "bc1qgdjqv0av3q56jvd82tkdjpy7gdp9ut8tlqmgrpmv24sq90ecnvqqjwvw97",
+      "vasp_name": "Bitfinex",
+      "source": "Bitfinex official Proof-of-Reserves disclosure & Spark Money / BitInfoCharts",
+      "confidence": "high",
+      "notes": "Bitfinex SegWit cold storage wallet"
+    },
+    {
+      "address": "19VNw8EQWKTmN7u1X15hqyWHrymrCCVWdK",
+      "vasp_name": "Bitfinex",
+      "source": "WalletExplorer.com entity label (Bitfinex.com)",
+      "confidence": "medium",
+      "notes": "Bitfinex active cluster address"
+    },
+    {
+      "address": "1B8MuMxt3QoGU2Ngg8HXtyy9Qrkwc9Dnou",
+      "vasp_name": "Bitfinex",
+      "source": "WalletExplorer.com entity label (Bitfinex.com)",
+      "confidence": "medium",
+      "notes": "Bitfinex deposit / sweep address"
+    },
+    {
+      "address": "1P5ZEDWTKTFGxQjZphgWPQUpe554WKDfHQ",
+      "vasp_name": "Coinbase",
+      "source": "Arkham Intelligence entity label & BitInfoCharts Top 100",
+      "confidence": "medium",
+      "notes": "Coinbase cold / custodial storage wallet"
+    },
+    {
+      "address": "3Kzh9qAqVWQhEsfQz7zEQL1EuSx5tyNLNS",
+      "vasp_name": "Coinbase",
+      "source": "BitInfoCharts / Whale Alert blockchain intelligence trackers",
+      "confidence": "medium",
+      "notes": "Coinbase institutional custodial wallet"
+    },
+    {
+      "address": "bc1ql49ydapnjafl5t2cp9zqpjwe6pdgmxy98859v2",
+      "vasp_name": "Robinhood",
+      "source": "Arkham Intelligence public entity tag & BitInfoCharts Top 100",
+      "confidence": "medium",
+      "notes": "Robinhood cold storage custodial wallet"
+    },
+    {
+      "address": "35Cm92BrvhoY6D2pu54VgBBVtBhcSveAzW",
+      "vasp_name": "Kraken",
+      "source": "WalletExplorer.com entity label (Kraken.com)",
+      "confidence": "medium",
+      "notes": "Kraken cluster address"
+    },
+    {
+      "address": "3Cu8ai9gnDhT7zysFEMbh9B9P241NNAjsK",
+      "vasp_name": "Kraken",
+      "source": "WalletExplorer.com entity label (Kraken.com)",
+      "confidence": "medium",
+      "notes": "Kraken deposit / sweep address"
+    },
+    {
+      "address": "35RqJirzPEvT3RnVQ4HyDUAbE9S1zQDdRd",
+      "vasp_name": "Kraken",
+      "source": "WalletExplorer.com entity label (Kraken.com)",
+      "confidence": "medium",
+      "notes": "Kraken high-volume processing address"
+    },
+    {
+      "address": "3Ga8qCBzwMiitBGzaoHPhEFHpLMJEDpac7",
+      "vasp_name": "Bitstamp",
+      "source": "WalletExplorer.com entity label (Bitstamp.net)",
+      "confidence": "medium",
+      "notes": "Bitstamp cluster address"
+    },
+    {
+      "address": "3CSGdxrBCnqaoHfSpMMJayj6TYnRr7U23g",
+      "vasp_name": "Bitstamp",
+      "source": "WalletExplorer.com entity label (Bitstamp.net)",
+      "confidence": "medium",
+      "notes": "Bitstamp deposit address"
+    },
+    {
+      "address": "3B1SjhsRuvxTAwxhwVbbuaa8JeEV6cw7TC",
+      "vasp_name": "Bitstamp",
+      "source": "WalletExplorer.com entity label (Bitstamp.net)",
+      "confidence": "medium",
+      "notes": "Bitstamp high-volume processing address"
+    },
+    {
+      "address": "15ypfpV8KyoAw9JNDezHvHRFuQ5TLujuxM",
+      "vasp_name": "Bittrex",
+      "source": "WalletExplorer.com entity label (Bittrex.com)",
+      "confidence": "medium",
+      "notes": "Bittrex cluster address"
+    },
+    {
+      "address": "1P1nV9yHqhkoMdw4sKjUMY7YQgePvrMeEA",
+      "vasp_name": "Bittrex",
+      "source": "WalletExplorer.com entity label (Bittrex.com)",
+      "confidence": "medium",
+      "notes": "Bittrex sweep address"
+    },
+    {
+      "address": "19Z7fp7r1jbRi7CZ9Gy8mSc31XptFtSCXT",
+      "vasp_name": "Bittrex",
+      "source": "WalletExplorer.com entity label (Bittrex.com)",
+      "confidence": "medium",
+      "notes": "Bittrex deposit address"
+    },
+    {
+      "address": "19hx1B4pTDsBAYJJYYrj1t6bcVw1e9omuH",
+      "vasp_name": "Huobi",
+      "source": "WalletExplorer.com entity label (Huobi.com)",
+      "confidence": "medium",
+      "notes": "Huobi cluster address"
+    },
+    {
+      "address": "16vyeuwbuNz9PKPs4VqqGLsVRJ2G6uJj39",
+      "vasp_name": "Huobi",
+      "source": "WalletExplorer.com entity label (Huobi.com)",
+      "confidence": "medium",
+      "notes": "Huobi settlement address"
+    },
+    {
+      "address": "1ko9cGfFxWoUMMZ3MsxuSjRHfLDNgyjr9",
+      "vasp_name": "Huobi",
+      "source": "WalletExplorer.com entity label (Huobi.com)",
+      "confidence": "medium",
+      "notes": "Huobi deposit address"
+    },
+    {
+      "address": "1Po1oWkD2LmodfkBYiAktwh76vkF93LKnh",
+      "vasp_name": "Poloniex",
+      "source": "WalletExplorer.com entity label (Poloniex.com)",
+      "confidence": "medium",
+      "notes": "Poloniex hot wallet / processing address"
+    },
+    {
+      "address": "1LgW4RA5iE98khRJ58Bhx5RLABP3QGjn9y",
+      "vasp_name": "Poloniex",
+      "source": "WalletExplorer.com entity label (Poloniex.com)",
+      "confidence": "medium",
+      "notes": "Poloniex sweep address"
+    },
+    {
+      "address": "19vtVvVSbLzKTsrndadsgJcyq3RveWPG5E",
+      "vasp_name": "OKCoin",
+      "source": "WalletExplorer.com entity label (OKCoin.com)",
+      "confidence": "medium",
+      "notes": "OKCoin cluster address"
+    },
+    {
+      "address": "1NhyQRhCavnGjgNrWBSbEjyDkjNh7tzESo",
+      "vasp_name": "OKCoin",
+      "source": "WalletExplorer.com entity label (OKCoin.com)",
+      "confidence": "medium",
+      "notes": "OKCoin deposit address"
+    },
+    {
+      "address": "17ac9tXHxu1nxdLgLu9WYk7vR8ggFN5GkH",
+      "vasp_name": "Luno",
+      "source": "WalletExplorer.com entity label (Luno.com)",
+      "confidence": "medium",
+      "notes": "Luno cluster wallet address"
+    },
+    {
+      "address": "3EWMHqKbhS5n6GJoLRmHZi2SaWT8R7b6n7",
+      "vasp_name": "Luno",
+      "source": "WalletExplorer.com entity label (Luno.com)",
+      "confidence": "medium",
+      "notes": "Luno sweep address"
+    },
+    {
+      "address": "1BQ3PsGSbqivWJm2TMBh2EiRzTS4pxcxwJ",
+      "vasp_name": "Paxful",
+      "source": "WalletExplorer.com entity label (Paxful.com)",
+      "confidence": "medium",
+      "notes": "Paxful marketplace settlement address"
+    },
+    {
+      "address": "1DzujaTWuxobfigBhrPcDj6gWZtR9UKMeo",
+      "vasp_name": "Paxful",
+      "source": "WalletExplorer.com entity label (Paxful.com)",
+      "confidence": "medium",
+      "notes": "Paxful deposit address"
+    },
+    {
+      "address": "1Axkqh16GtQKsdsH7bvQXuSTX9Y7UUiuq1",
+      "vasp_name": "HitBTC",
+      "source": "WalletExplorer.com entity label (HitBtc.com)",
+      "confidence": "medium",
+      "notes": "HitBTC deposit address"
+    },
+    {
+      "address": "1FaFMvacpfJhuiFvTEFViUxSnLwXZBXx6e",
+      "vasp_name": "HitBTC",
+      "source": "WalletExplorer.com entity label (HitBtc.com)",
+      "confidence": "medium",
+      "notes": "HitBTC cluster address"
+    }
+  ]
 }
