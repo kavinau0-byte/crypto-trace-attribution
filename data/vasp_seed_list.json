@@ -1,5 +1,5 @@
 {
-  "_comment": "This is a small curated seed list for hackathon demo purposes only. It does NOT represent complete or comprehensive VASP address coverage. Addresses are sourced from public forensics trackers and disclosures as cited per-entry.",
+  "_comment": "This is a small curated seed list for hackathon demo purposes only (45 entries). It does NOT represent complete or comprehensive VASP address coverage. Addresses are sourced from public forensics trackers and disclosures as cited per-entry.",
   "entries": [
     {
       "address": "34xp4vRoCGJym3xR7yCVPFHoCNxv4Twseo",
@@ -231,6 +231,90 @@
       "source": "WalletExplorer.com entity label (HitBtc.com)",
       "confidence": "medium",
       "notes": "HitBTC cluster address"
+    },
+    {
+      "address": "3CTLp5KA4LMKvhCTWJipEqvc8DzQTGC1i4",
+      "vasp_name": "Kraken",
+      "source": "Live WalletExplorer.com wallet listing: walletexplorer.com/wallet/Kraken.com/addresses",
+      "confidence": "medium",
+      "notes": "Kraken cluster address"
+    },
+    {
+      "address": "39zisyYEnxuD6bDpHMuCoZieP1RBytuG4P",
+      "vasp_name": "Kraken",
+      "source": "Live WalletExplorer.com wallet listing: walletexplorer.com/wallet/Kraken.com/addresses",
+      "confidence": "medium",
+      "notes": "Kraken cluster address"
+    },
+    {
+      "address": "3DqorERM8bHfj8Pvk8sN78xjGTSTMK3mhp",
+      "vasp_name": "Kraken",
+      "source": "Live WalletExplorer.com wallet listing: walletexplorer.com/wallet/Kraken.com/addresses",
+      "confidence": "medium",
+      "notes": "Kraken cluster address"
+    },
+    {
+      "address": "3A7Qg6KcekgSpZk9KRo91Thovf8iwuww7s",
+      "vasp_name": "Bitstamp",
+      "source": "Live WalletExplorer.com wallet listing: walletexplorer.com/wallet/Bitstamp.net/addresses",
+      "confidence": "medium",
+      "notes": "Bitstamp cluster address"
+    },
+    {
+      "address": "36dB2oPBD7LNgjjemPjeCAyX5wy7ukDzeh",
+      "vasp_name": "Bitstamp",
+      "source": "Live WalletExplorer.com wallet listing: walletexplorer.com/wallet/Bitstamp.net/addresses",
+      "confidence": "medium",
+      "notes": "Bitstamp cluster address"
+    },
+    {
+      "address": "3CDHcQUEsZdhRTFk8E3EsDPGGzgwBD6rhu",
+      "vasp_name": "Bitstamp",
+      "source": "Live WalletExplorer.com wallet listing: walletexplorer.com/wallet/Bitstamp.net/addresses",
+      "confidence": "medium",
+      "notes": "Bitstamp cluster address"
+    },
+    {
+      "address": "15eKJNLSYtp2sq9jga6kKbZKffuxMU5wL1",
+      "vasp_name": "Bittrex",
+      "source": "Live WalletExplorer.com wallet listing: walletexplorer.com/wallet/Bittrex.com/addresses",
+      "confidence": "medium",
+      "notes": "Bittrex cluster address"
+    },
+    {
+      "address": "1JhfweYqXnuPkSmbYgacKtVFuXxXLSvXKe",
+      "vasp_name": "Bittrex",
+      "source": "Live WalletExplorer.com wallet listing: walletexplorer.com/wallet/Bittrex.com/addresses",
+      "confidence": "medium",
+      "notes": "Bittrex cluster address"
+    },
+    {
+      "address": "1LsmPMmqnJmoR7ubzrGD1vzvuSQmoKsbFW",
+      "vasp_name": "Bittrex",
+      "source": "Live WalletExplorer.com wallet listing: walletexplorer.com/wallet/Bittrex.com/addresses",
+      "confidence": "medium",
+      "notes": "Bittrex cluster address"
+    },
+    {
+      "address": "12uuCfvuxeyGhWaEU1sHTbkCN7eWMT7qFp",
+      "vasp_name": "Huobi",
+      "source": "Live WalletExplorer.com wallet listing: walletexplorer.com/wallet/Huobi.com/addresses",
+      "confidence": "medium",
+      "notes": "Huobi cluster address"
+    },
+    {
+      "address": "1NMbcRqggWu75DG5AqZtin5kecdHoDVs3b",
+      "vasp_name": "Huobi",
+      "source": "Live WalletExplorer.com wallet listing: walletexplorer.com/wallet/Huobi.com/addresses",
+      "confidence": "medium",
+      "notes": "Huobi cluster address"
+    },
+    {
+      "address": "1DgcQFeaCQBo41oxtzUuV3caW5TNjXvhLZ",
+      "vasp_name": "Huobi",
+      "source": "Live WalletExplorer.com wallet listing: walletexplorer.com/wallet/Huobi.com/addresses",
+      "confidence": "medium",
+      "notes": "Huobi cluster address"
     }
   ]
 }
