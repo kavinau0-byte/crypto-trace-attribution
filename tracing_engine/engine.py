@@ -96,12 +96,17 @@ def trace_wallet(
         hops=raw_hops
     )
 
-    # 4. Confidence scoring (Day 5-6 Component - currently stubbed)
+    # 4. Confidence scoring (Task 6 Component)
+    cluster_size = (
+        cluster.size
+        if hasattr(cluster, "size")
+        else (len(cluster.members) if hasattr(cluster, "members") else None)
+    )
     confidence = calculate_confidence(
         match_method=match_method,
-        matched_vasp=matched_vasp,
-        hop_distance=0 if match_method == "direct_tag" else None,
-        cluster_size=len(cluster)
+        hop_index=0,
+        cluster_size=cluster_size,
+        seed_entry_confidence=None,
     )
 
     # 5. Assemble final contract
