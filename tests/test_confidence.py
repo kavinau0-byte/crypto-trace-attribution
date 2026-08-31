@@ -200,6 +200,12 @@ class TestConfidenceScoring(unittest.TestCase):
         """Verify negative hop_index raises a ValueError."""
         with self.assertRaises(ValueError):
             calculate_confidence(match_method="direct_tag", hop_index=-1)
+            
+    def test_negative_hop_index_raises_even_when_unresolved(self):
+        """Verify negative hop_index still raises when match_method is 'unresolved',
+        i.e. the base==0.0 short-circuit must not silently swallow invalid input."""
+        with self.assertRaises(ValueError):
+            calculate_confidence(match_method="unresolved", hop_index=-1)
 
     def test_negative_cluster_size_raises_value_error(self):
         """Verify negative cluster_size raises a ValueError when cluster_match is evaluated."""

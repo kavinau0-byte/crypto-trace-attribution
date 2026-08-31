@@ -231,10 +231,15 @@ def calculate_confidence(
         ValueError: If match_method is invalid or hop_index is negative.
     """
     base = _base_score(match_method)
+
+    # Validate hop_index unconditionally (even for unresolved matches) so
+    # invalid input always raises, rather than being silently swallowed by
+    # the base == 0.0 short-circuit below.
+    decay = _hop_decay(hop_index)
+
     if base == 0.0:
         return 0.0
-
-    decay = _hop_decay(hop_index)
+        
     cluster_mod = _cluster_modifier(cluster_size, match_method)
     source_mod = _source_confidence_modifier(seed_entry_confidence)
 
