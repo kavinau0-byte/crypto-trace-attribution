@@ -10,12 +10,18 @@ amount_btc and timestamp are placeholders; this dataset provides transaction-gra
 topology only, not real amounts or times. Do not use output of this adapter to
 validate amount or timestamp handling.
 
-Topological Substitution:
+Topological Substitution & Transaction Batching:
 Elliptic graph nodes represent Bitcoin transactions (txIds), not addresses.
 In this benchmark, each Elliptic txId is used as a stand-in "address" purely
 to exercise the BFS graph traversal algorithm against real, large-scale Bitcoin
 transaction topology (branching factors, graph depth, and fan-out structures)
 without fabricating external data sources.
+
+Each source node synthesizes a single transaction containing all of that node's
+outgoing edges in its `outputs` list (with `tx_hash` prefixed `elliptic_node_tx::{node_id}`).
+This batching faithfully represents the node's real Bitcoin transaction out-degree,
+allowing the BFS traversal engine's `max_branches_per_tx` safeguard to properly
+cap high-fanout nodes.
 ================================================================================
 """
 
@@ -140,38 +146,41 @@ class EllipticGraphAdapter:
         address: str,
         session: Optional[Any] = None,
     ) -> List[Dict[str, Any]]:
-        """Synthesize transaction records matching get_transactions() contract for a given node.
+        """Synthesize a single transaction record for a given node containing all outgoing edges.
 
-        For each outgoing edge `node_id -> dest_id`, creates a transaction dictionary where:
-        - `inputs = [{"address": node_id}]` (marks node_id as spender so is_spender passes in trace_hops)
-        - `outputs = [{"address": dest_id, "value_btc": 0.0}]` (stand-in 0.0 amount)
-        - `tx_hash = f"elliptic_edge::{node_id}->{dest_id}"` (explicit synthetic prefix)
+        For a source node `node_id`, creates a single transaction dictionary where:
+        - `tx_hash = f"elliptic_node_tx::{node_id}"` (explicit synthetic prefix per source node)
         - `timestamp = None` (no fabricated timestamp)
+        - `inputs = [{"address": node_id}]` (marks node_id as spender so is_spender passes in trace_hops)
+        - `outputs = [{"address": dest_id, "value_btc": 0.0} for dest_id in outgoing_dests]`
+          (all outgoing destination edges as separate outputs in a single transaction)
 
         Args:
             address: The stand-in node identifier (Elliptic txId string).
             session: Ignored network session parameter (matching fetcher.get_transactions signature).
 
         Returns:
-            List of synthesized transaction dictionaries. Returns [] if node has no outgoing edges.
+            Single-element list `[tx]` containing the batched transaction, or `[]` if node has no outgoing edges.
         """
         clean_node = str(address).strip() if address else ""
         if not clean_node or clean_node not in self._adj:
             return []
 
         outgoing_dests = self._adj[clean_node]
-        transactions: List[Dict[str, Any]] = []
+        if not outgoing_dests:
+            return []
 
-        for dest_id in outgoing_dests:
-            tx = {
-                "tx_hash": f"elliptic_edge::{clean_node}->{dest_id}",
-                "timestamp": None,
-                "inputs": [{"address": clean_node}],
-                "outputs": [{"address": dest_id, "value_btc": 0.0}],
-            }
-            transactions.append(tx)
+        tx = {
+            "tx_hash": f"elliptic_node_tx::{clean_node}",
+            "timestamp": None,
+            "inputs": [{"address": clean_node}],
+            "outputs": [
+                {"address": dest_id, "value_btc": 0.0}
+                for dest_id in outgoing_dests
+            ],
+        }
 
-        return transactions
+        return [tx]
 
 
 # Module-level singleton instance for convenient monkeypatching and direct usage

@@ -1,12 +1,17 @@
 # Elliptic Benchmark Results (Task 7)
 
+> **Correction / Methodological Note (Task 7 Follow-Up):**  
+> The initial Task 7 adapter synthesized one transaction per outgoing edge (each with 1 output), which made `max_branches_per_tx=5` in `trace_hops()` structurally unreachable because `len(outputs)` was always 1 per transaction dict. This corrected benchmark uses a batched one-transaction-per-node adapter that places all outgoing destination edges into a single `outputs` list (with `tx_hash` prefixed `elliptic_node_tx::{node_id}`). This faithfully mirrors real high-fanout Bitcoin transactions and properly exercises the `max_branches_per_tx` safeguard. All metrics below represent fresh recomputed numbers from the full 203,769-node dataset.
+
+---
+
 ## What this benchmark does and does NOT measure
 
 ### Out of Scope / Explicit Non-Goals:
 - **NO VASP Attribution Accuracy:** The Elliptic dataset contains no VASP labels of any kind. This benchmark does not compute, report, or imply any VASP matching accuracy.
 - **NO Address Clustering / CIOH Benchmark:** The Elliptic dataset contains no raw transaction input/output (vin/vout) address lists — only anonymized transaction feature vectors and a transaction-to-transaction edgelist. `clustering.py` is not exercised against this data.
 - **NO Illicit/Licit Classification:** Elliptic's `class` label is neither used nor correlated with engine outputs (which is strictly Person B / `risk_flags` territory).
-- **Synthetic Placeholder Fields:** In the adapter, `amount_btc` is set to `0.0`, `timestamp` is `None`, and `tx_hash` is prefixed `elliptic_edge::`. These are placeholders; this benchmark does not measure amount or timestamp logic.
+- **Synthetic Placeholder Fields:** In the adapter, `amount_btc` is set to `0.0`, `timestamp` is `None`, and `tx_hash` is prefixed `elliptic_node_tx::`. These are placeholders; this benchmark does not measure amount or timestamp logic.
 
 ### What this Benchmark Measures:
 A **graph-traversal robustness and performance benchmark** of the real, unmodified `trace_hops()` function (`tracing_engine/hop_tracer.py`), run against the real transaction-flow graph structure from the Kaggle Elliptic Bitcoin dataset (`elliptic_txs_edgelist.csv`). Each Elliptic `txId` is used as a stand-in "address" to evaluate BFS traversal across 203,769 nodes and 234,355 edges under realistic Bitcoin graph branching topologies.
@@ -33,25 +38,27 @@ A **graph-traversal robustness and performance benchmark** of the real, unmodifi
 ### Hops Discovered (`len(hops_record)`):
 | max_hops | Min | Median | Max | Mean | p95 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **max_hops = 2** | 0 | 2.0 | 671 | 2.308 | 5 |
-| **max_hops = 4** | 0 | 3.0 | 794 | 4.322 | 12 |
+| **max_hops = 2** | 0 | 2.0 | 30 | 2.114 | 5 |
+| **max_hops = 4** | 0 | 3.0 | 203 | 3.879 | 11 |
 
 ### Unique Addresses Visited (Seed + Destination Nodes):
 | max_hops | Min | Median | Max | Mean | p95 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **max_hops = 2** | 1 | 3.0 | 672 | 3.308 | 6 |
-| **max_hops = 4** | 1 | 4.0 | 795 | 5.322 | 13 |
+| **max_hops = 2** | 1 | 3.0 | 31 | 3.114 | 6 |
+| **max_hops = 4** | 1 | 4.0 | 204 | 4.879 | 12 |
 
 ---
 
 ## 3. Branch-Limit Trigger Rate & Fan-Out Analysis
 
-- **Per-Transaction Branch Limit Trigger Rate (`max_branches_per_tx=5`):** 0.00% (max_hops=2) and 0.00% (max_hops=4).
-- **Synthesized Per-Transaction Fan-Out:** In the adapter mapping, each synthesized transaction represents exactly one directed edge with 1 output, meaning individual transaction output lists do not exceed 1 output.
-- **Underlying Graph Node Out-Degree (Fan-Out):**
-  - Maximum out-degree observed for any single node in the raw dataset: **472** outgoing transaction edges.
-  - Nodes with out-degree > 5: **1,963** (1.18% of all 166,345 source nodes).
+- **Per-Trace Branch Limit Trigger Rate (`max_branches_per_tx=5`):**
+  - `max_hops = 2`: **2.84%** (5,780 of 203,769 total traces triggered the branch cap)
+  - `max_hops = 4`: **4.30%** (8,762 of 203,769 total traces triggered the branch cap)
+- **Safeguard Effectiveness on High-Fanout Nodes:**
+  - Maximum raw out-degree observed for any single node in the dataset: **472** outgoing transaction edges.
+  - Nodes with out-degree > 5 in raw dataset: **1,963** (1.18% of all 166,345 source nodes).
   - Configured transaction fan-out safeguard cap in `trace_hops()`: **5**.
+  - **Forensic Impact:** Without this cap, high-fanout consolidation nodes (such as the node with 472 outputs) would cause combinatorial explosion in BFS queue size. With `max_branches_per_tx=5`, `trace_hops()` bounded the maximum hops discovered per trace at 203 (at max_hops=4), maintaining strict linear execution bounds.
 
 ---
 
@@ -68,10 +75,10 @@ A **graph-traversal robustness and performance benchmark** of the real, unmodifi
 
 | max_hops | Mean Time / Trace (ms) | p95 Time / Trace (ms) | Throughput (traces / sec) |
 | :--- | :--- | :--- | :--- |
-| **max_hops = 2** | **0.0484 ms** (48.44 µs) | **0.0963 ms** | **20,642** |
-| **max_hops = 4** | **0.1078 ms** (107.80 µs) | **0.1912 ms** | **9,276** |
+| **max_hops = 2** | **0.0684 ms** (68.39 µs) | **0.1382 ms** | **14,622** |
+| **max_hops = 4** | **0.1402 ms** (140.25 µs) | **0.2793 ms** | **7,130** |
 
-- **Runtime Scaling (2→4 hops):** Scaling ratio of mean wall-clock times is **2.23x**, showing sub-linear to mild linear growth with no signs of exponential runtime blowup across deeper traversal depths.
+- **Runtime Scaling (2→4 hops):** Scaling ratio of mean wall-clock times is **2.05x**, demonstrating sub-linear to mild linear growth with no exponential degradation.
 
 ---
 
