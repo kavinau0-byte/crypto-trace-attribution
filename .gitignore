@@ -216,3 +216,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Elliptic benchmark dataset (raw data files ignored)
+data/elliptic/*.csv
+data/elliptic/*.zip
+
