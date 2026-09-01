@@ -69,7 +69,7 @@ def trace_address(address: str, max_hops: int = 5) -> dict:
 
     matched_vasp = rng.choice(KNOWN_VASPS)
     if matched_vasp:
-        match_method = rng.choice(["direct_tag", "cluster_proximity"])
+        match_method = rng.choice(["direct_tag", "cluster_match"])
         confidence = round(rng.uniform(0.55, 0.97), 2)
     else:
         match_method = "unresolved"
