@@ -12,9 +12,15 @@ can be built and tested independently right now.
 SWAP-OUT POINT: once Person A's real module is ready, replace the body of
 `trace_address()` with a call into their module, e.g.:
 
-    from tracing_engine import trace_address as real_trace_address
-    def trace_address(address, max_hops=5):
-        return real_trace_address(address, max_hops=max_hops)
+    from tracing_engine.engine import trace_wallet as real_trace_wallet
+    def trace_address(address, max_hops=4):
+        return real_trace_wallet(address, max_hops=max_hops)
+
+NOTE: Person A's real entrypoint is named `trace_wallet` (not
+`trace_address`) and lives at `tracing_engine.engine.trace_wallet`. This
+stand-in function keeps the local name `trace_address` so nothing else in
+this backend (main.py, schemas.py, risk_engine.py, report_generator.py)
+needs to change at swap time -- only the body above changes.
 
 Everything downstream (risk_engine, database, report_generator) already
 consumes the same TraceResult shape, so no other code needs to change.
@@ -41,7 +47,7 @@ def _fake_txhash(rng: random.Random) -> str:
     return "".join(rng.choice("0123456789abcdef") for _ in range(64))
 
 
-def trace_address(address: str, max_hops: int = 5) -> dict:
+def trace_address(address: str, max_hops: int = 4) -> dict:
     """
     Returns a TraceResult-shaped dict for `address`, matching Section 3
     of the build plan exactly. Replace with the real engine call once

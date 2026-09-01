@@ -24,13 +24,13 @@ class TraceResult(BaseModel):
     hops: List[Hop]
     matched_vasp: Optional[str] = None
     confidence: float = Field(ge=0.0, le=1.0)
-    match_method: str  # "direct_tag" | "cluster_proximity" | "unresolved"
+    match_method: str  # "direct_tag" | "cluster_match" | "unresolved"
     risk_flags: List[str] = []
 
 
 class TraceRequest(BaseModel):
     address: str
-    max_hops: int = 5
+    max_hops: int = 4
 
 
 class CaseSummary(BaseModel):
