@@ -102,6 +102,30 @@ def trace_wallet(
         if hasattr(cluster, "size")
         else (len(cluster.members) if hasattr(cluster, "members") else None)
     )
+
+    # DECISION (Task 8, hackathon-scope, not a bug/oversight):
+    # hop_index is hardcoded to 0 here because match_vasp() above only ever
+    # checks the seed address and its own CIOH cluster against the VASP
+    # seed list -- it never walks forward through raw_hops to see whether
+    # a *later* hop in the chain lands on a known VASP address. Since the
+    # match itself is always evaluated "at hop 0" today, passing hop_index=0
+    # into calculate_confidence() is currently consistent with what
+    # match_vasp() actually checks, not a shortcut that silently drops
+    # information we have.
+    #
+    # What this means for the prototype: if funds move seed -> hop1 -> hop2
+    # -> (known VASP address), that VASP is NOT detected or attributed at
+    # all right now -- match_vasp() simply won't find it, and this trace
+    # would come back "unresolved" even though a real destination exists
+    # further down the chain. Confidence scoring on hop distance is
+    # therefore only meaningful for direct/cluster matches at the seed,
+    # not for deeper hop chains.
+    #
+    # This is an intentional scope boundary for the 10-12 day SIH
+    # prototype, decided explicitly in the Task 8 integration chat -- not
+    # deferred silently. Extending match_vasp() to walk raw_hops and
+    # report the real hop_index of a downstream match is the natural next
+    # step, but is explicitly OUT of scope for this hackathon build.
     confidence = calculate_confidence(
         match_method=match_method,
         hop_index=0,
