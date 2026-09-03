@@ -1,9 +1,13 @@
 """Tests for the transaction fetcher and tracing engine modules."""
 
 import unittest
+from unittest.mock import patch, MagicMock
+import requests
+
 from tracing_engine.fetcher import get_transactions
 from tracing_engine.engine import trace_wallet
 from tracing_engine.schema import TraceResult, HopInfo
+from tracing_engine.config import MAX_RETRIES
 
 
 class TestFetcher(unittest.TestCase):
@@ -47,6 +51,60 @@ class TestFetcher(unittest.TestCase):
         txs = get_transactions("")
         self.assertIsInstance(txs, list)
         self.assertEqual(len(txs), 0)
+
+
+class TestFetcherMocked(unittest.TestCase):
+    """Mocked tests for get_transactions retry and error handling — zero real network calls."""
+
+    @patch("tracing_engine.fetcher.time.sleep")
+    def test_429_then_success(self, mock_sleep):
+        """First call returns 429 (rate limit), second call returns 200 with valid data."""
+        # Build mock responses
+        mock_429 = MagicMock()
+        mock_429.status_code = 429
+
+        sample_raw_tx = {
+            "txid": "abc123",
+            "status": {"confirmed": True, "block_time": 1700000000},
+            "fee": 1000,
+            "vin": [{"prevout": {"scriptpubkey_address": "sender_A", "value": 100000},
+                      "is_coinbase": False, "txid": "prev_tx", "vout": 0}],
+            "vout": [{"scriptpubkey_address": "dest_B", "value": 50000,
+                       "scriptpubkey_type": "p2pkh"}],
+        }
+        mock_200 = MagicMock()
+        mock_200.status_code = 200
+        mock_200.json.return_value = [sample_raw_tx]
+        mock_200.raise_for_status = MagicMock()
+
+        with patch("tracing_engine.fetcher.requests") as mock_requests:
+            mock_requests.get.side_effect = [mock_429, mock_200]
+            mock_requests.exceptions = requests.exceptions
+
+            result = get_transactions("test_address_429")
+
+        self.assertIsInstance(result, list)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["tx_hash"], "abc123")
+        # time.sleep must have been called during backoff
+        mock_sleep.assert_called()
+
+    @patch("tracing_engine.fetcher.time.sleep")
+    def test_persistent_timeout_exhausts_retries(self, mock_sleep):
+        """All retries raise Timeout — must return [] and call mock exactly MAX_RETRIES times."""
+        with patch("tracing_engine.fetcher.requests") as mock_requests:
+            mock_requests.get.side_effect = requests.exceptions.Timeout("timed out")
+            mock_requests.exceptions = requests.exceptions
+
+            result = get_transactions("test_address_timeout")
+
+        self.assertIsInstance(result, list)
+        self.assertEqual(result, [])
+        self.assertEqual(
+            mock_requests.get.call_count,
+            MAX_RETRIES,
+            f"Must retry exactly MAX_RETRIES={MAX_RETRIES} times before giving up",
+        )
 
 
 class TestEngineContract(unittest.TestCase):
@@ -102,3 +160,4 @@ class TestEngineContract(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

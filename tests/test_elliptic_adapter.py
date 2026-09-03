@@ -82,12 +82,24 @@ class TestEllipticAdapter(unittest.TestCase):
             hops_2 = trace_hops(seed_address="node_A", max_hops=2)
             dest_addrs_2 = {h["address"] for h in hops_2}
             self.assertEqual(dest_addrs_2, {"node_B", "node_C", "node_D", "node_E"})
-            self.assertEqual(len(hops_2), 4)
+            # node_D receives two GENUINELY SEPARATE real edges: node_B -> node_D
+            # (tx elliptic_node_tx::node_B) and node_C -> node_D (tx
+            # elliptic_node_tx::node_C). The ancestor-aware dedup fix correctly
+            # records both as distinct hops (different tx_hash), so total hop
+            # count is 5, not 4 unique destinations.
+            self.assertEqual(len(hops_2), 5)
 
             hop_0_addrs = {h["address"] for h in hops_2 if h["hop_index"] == 0}
             hop_1_addrs = {h["address"] for h in hops_2 if h["hop_index"] == 1}
             self.assertEqual(hop_0_addrs, {"node_B", "node_C"})
             self.assertEqual(hop_1_addrs, {"node_D", "node_E"})
+
+            # Confirm node_D specifically appears twice at hop 1 (once per
+            # real incoming transaction), not collapsed into one entry.
+            hop_1_dest_d_count = sum(
+                1 for h in hops_2 if h["hop_index"] == 1 and h["address"] == "node_D"
+            )
+            self.assertEqual(hop_1_dest_d_count, 2)
 
     def test_trace_hops_from_sink_node(self):
         """Verify trace_hops() on a pure sink node returns empty hop list []."""

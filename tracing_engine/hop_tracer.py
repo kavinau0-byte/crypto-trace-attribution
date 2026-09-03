@@ -17,14 +17,23 @@ account-based model (like Ethereum). Key implications for forward tracing:
    addresses from recipient addresses (which will be implemented in Day 4
    `clustering.py` using Common Input Ownership & Change Heuristics), forward
    tracing may follow both change and payment paths.
-4. Cycles & Loops: Cryptocurrency transactions can loop back to known entities;
-   a visited-address set prevents infinite loops and ensures BFS termination.
+
+Cycles & Loops — two-set design:
+   Two separate concerns require two separate data structures:
+   (a) `queued_addresses` prevents infinite BFS loops on cyclic graphs (A→B→A).
+       An address is queued at most once, ever — this is what stops re-exploration.
+   (b) `recorded_hop_keys` (keyed on `(tx_hash, dest_addr)`) deduplicates hop
+       RECORDS. The same destination CAN appear multiple times if paid by genuinely
+       different transactions (different tx_hash), because each is real on-chain
+       activity. But the exact same (tx_hash, dest_addr) pair must not produce
+       duplicate hop entries (e.g. mempool.space pagination overlap returning the
+       identical tx dict twice).
 ================================================================================
 """
 
 import collections
 import logging
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set, Tuple
 import requests
 
 from tracing_engine.config import DEFAULT_MAX_HOPS
@@ -69,7 +78,22 @@ def trace_hops(
     if not clean_seed or max_hops <= 0:
         return []
 
-    visited_addresses: Set[str] = {clean_seed}
+    # queued_addresses: gates BFS traversal — each address is explored at most once
+    # to prevent infinite loops on cycles (e.g. A→B→A). Seed is pre-added.
+    queued_addresses: Set[str] = {clean_seed}
+
+    # recorded_hop_keys: deduplicates hop RECORDS by (tx_hash, dest_addr).
+    # Allows the same dest_addr from different tx_hashes (real repeat payments)
+    # while rejecting exact duplicates (e.g. pagination overlap returning the same tx twice).
+    recorded_hop_keys: Set[Tuple[str, str]] = set()
+
+    # ancestors_of: for each queued address, the set of addresses on the path
+    # from the seed to it (inclusive). Used to distinguish a genuine repeat
+    # payment (sibling edges from the same node) from a true back-edge in the
+    # graph (e.g. B paying back to an address already on its own path, like
+    # the seed). Back-edges are not recorded as hops; sibling repeats are.
+    ancestors_of: dict = {clean_seed: frozenset({clean_seed})}
+
     hops_record: List[Dict[str, Any]] = []
 
     # Queue contains tuples of (current_address, current_hop_index)
@@ -116,11 +140,24 @@ def trace_hops(
                 dest_addr = out.get("address")
                 amount_btc = out.get("value_btc", 0.0)
 
-                # Skip invalid, missing, self-referencing (same address), or already visited addresses
-                if not dest_addr or dest_addr == current_addr or dest_addr in visited_addresses:
+                # Skip invalid, missing, or self-referencing (same address as current node)
+                if not dest_addr or dest_addr == current_addr:
                     continue
 
-                # Record the hop
+                # Skip true back-edges: dest_addr is already an ancestor of the
+                # current node (i.e. it's on the path we took to get here, such
+                # as the seed address itself). This is "the graph looping back",
+                # not new fund movement, so it is not recorded as a hop.
+                if dest_addr in ancestors_of.get(current_addr, frozenset()):
+                    continue
+
+                # Deduplicate hop records: skip if this exact (tx_hash, dest_addr)
+                # was already recorded (e.g. pagination overlap returning same tx twice).
+                hop_key = (tx_hash, dest_addr)
+                if hop_key in recorded_hop_keys:
+                    continue
+
+                # Record the hop — same dest from a different tx_hash IS recorded
                 hop_entry = HopInfo(
                     hop_index=current_hop,
                     address=dest_addr,
@@ -129,13 +166,18 @@ def trace_hops(
                     amount_btc=amount_btc
                 )
                 hops_record.append(hop_entry.to_dict())
-                visited_addresses.add(dest_addr)
+                recorded_hop_keys.add(hop_key)
                 branches_count += 1
 
-                # Enqueue next level exploration if depth allows
-                next_hop = current_hop + 1
-                if next_hop < max_hops:
-                    queue.append((dest_addr, next_hop))
+                # Queue for further BFS exploration only if this address hasn't been
+                # queued before. Even a repeat-destination hop should trigger queueing
+                # if the address is genuinely new to the BFS frontier.
+                if dest_addr not in queued_addresses:
+                    queued_addresses.add(dest_addr)
+                    ancestors_of[dest_addr] = ancestors_of.get(current_addr, frozenset({clean_seed})) | {dest_addr}
+                    next_hop = current_hop + 1
+                    if next_hop < max_hops:
+                        queue.append((dest_addr, next_hop))
 
                 if branches_count >= max_branches_per_tx:
                     logger.debug(
@@ -144,6 +186,7 @@ def trace_hops(
                     break
 
     logger.info(
-        f"Completed forward trace for {clean_seed}: discovered {len(hops_record)} hops across {len(visited_addresses)} addresses"
+        f"Completed forward trace for {clean_seed}: discovered {len(hops_record)} hops across {len(queued_addresses)} addresses"
     )
     return hops_record
+
