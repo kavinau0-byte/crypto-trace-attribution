@@ -38,27 +38,35 @@ A **graph-traversal robustness and performance benchmark** of the real, unmodifi
 ### Hops Discovered (`len(hops_record)`):
 | max_hops | Min | Median | Max | Mean | p95 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **max_hops = 2** | 0 | 2.0 | 30 | 2.114 | 5 |
-| **max_hops = 4** | 0 | 3.0 | 203 | 3.879 | 11 |
+| **max_hops = 2** | 0 | 2.0 | 30 | 2.136 | 5 |
+| **max_hops = 4** | 0 | 3.0 | 350 | 4.134 | 11 |
 
 ### Unique Addresses Visited (Seed + Destination Nodes):
 | max_hops | Min | Median | Max | Mean | p95 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **max_hops = 2** | 1 | 3.0 | 31 | 3.114 | 6 |
-| **max_hops = 4** | 1 | 4.0 | 204 | 4.879 | 12 |
+| **max_hops = 2** | 1 | 3.0 | 31 | 3.108 | 6 |
+| **max_hops = 4** | 1 | 4.0 | 163 | 4.827 | 12 |
 
 ---
 
 ## 3. Branch-Limit Trigger Rate & Fan-Out Analysis
 
 - **Per-Trace Branch Limit Trigger Rate (`max_branches_per_tx=5`):**
-  - `max_hops = 2`: **2.84%** (5,780 of 203,769 total traces triggered the branch cap)
-  - `max_hops = 4`: **4.30%** (8,762 of 203,769 total traces triggered the branch cap)
+  - `max_hops = 2`: **2.87%** (5,844 of 203,769 total traces triggered the branch cap)
+  - `max_hops = 4`: **4.38%** (8,918 of 203,769 total traces triggered the branch cap)
 - **Safeguard Effectiveness on High-Fanout Nodes:**
   - Maximum raw out-degree observed for any single node in the dataset: **472** outgoing transaction edges.
   - Nodes with out-degree > 5 in raw dataset: **1,963** (1.18% of all 166,345 source nodes).
   - Configured transaction fan-out safeguard cap in `trace_hops()`: **5**.
-  - **Forensic Impact:** Without this cap, high-fanout consolidation nodes (such as the node with 472 outputs) would cause combinatorial explosion in BFS queue size. With `max_branches_per_tx=5`, `trace_hops()` bounded the maximum hops discovered per trace at 203 (at max_hops=4), maintaining strict linear execution bounds.
+  - **Forensic Impact:** Without this cap, high-fanout consolidation nodes (such as the node with 472 outputs) would cause combinatorial explosion in BFS queue size. With `max_branches_per_tx=5`, `trace_hops()` bounded the maximum hops discovered per trace at 350 (at max_hops=4), maintaining strict linear execution bounds.
+- **Interaction with Task 9 hop-dedup fix:** After the Task 9 ancestor-aware
+  fix, repeat real destinations now correctly consume one of the 5
+  `max_branches_per_tx` slots (previously they were filtered out before
+  reaching the cap). This is why the max "Hops Discovered" figure rose
+  (203→350) while the max "Unique Addresses Visited" figure fell (204→163)
+  compared to the pre-fix benchmark run: more real repeat-payment activity is
+  now captured, at the cost of slightly less new-address discovery on
+  already-cap-constrained high-fanout nodes. This is expected and correct.
 
 ---
 
@@ -75,10 +83,10 @@ A **graph-traversal robustness and performance benchmark** of the real, unmodifi
 
 | max_hops | Mean Time / Trace (ms) | p95 Time / Trace (ms) | Throughput (traces / sec) |
 | :--- | :--- | :--- | :--- |
-| **max_hops = 2** | **0.0684 ms** (68.39 µs) | **0.1382 ms** | **14,622** |
-| **max_hops = 4** | **0.1402 ms** (140.25 µs) | **0.2793 ms** | **7,130** |
+| **max_hops = 2** | **0.0363 ms** (36.33 µs) | **0.0875 ms** | **27,527** |
+| **max_hops = 4** | **0.0853 ms** (85.29 µs) | **0.2022 ms** | **11,725** |
 
-- **Runtime Scaling (2→4 hops):** Scaling ratio of mean wall-clock times is **2.05x**, demonstrating sub-linear to mild linear growth with no exponential degradation.
+- **Runtime Scaling (2→4 hops):** Scaling ratio of mean wall-clock times is **2.35x**, demonstrating sub-linear to mild linear growth with no exponential degradation.
 
 ---
 
