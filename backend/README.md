@@ -28,19 +28,14 @@ API docs (auto-generated): http://localhost:8000/docs
 | `app/report_generator.py` | PDF report builder (reportlab) |
 | `app/main.py` | FastAPI routes |
 
-## Swapping in Person A's real engine
-In `app/main.py`, change:
-```python
-from .sample_engine import trace_address
-```
-to:
-```python
-from tracing_engine import trace_address  # Person A's real module
-```
-As long as their `trace_address(address, max_hops)` returns a dict matching
-the Section 3 contract (query_address, chain, hops, matched_vasp,
-confidence, match_method), nothing else in this backend needs to change —
-that's the whole point of the contract.
+## Swapping in Person A's real engine — DONE
+`sample_engine.py`'s `trace_address()` now calls Person A's real
+`tracing_engine.engine.trace_wallet` internally. `main.py` still imports
+`trace_address` from `.sample_engine` unchanged -- the local name was kept
+stable on purpose so nothing else in this backend needed to change at
+swap time. (Note: `tracing_engine` only exports `trace_wallet`, not
+`trace_address` -- importing `trace_address` directly from `tracing_engine`,
+as an earlier draft of this README suggested, would fail.)
 
 ## Not yet built (next steps for Branch B)
 - Interactive graph visualization (Cytoscape.js) consuming `GET /api/cases/{id}` hops data

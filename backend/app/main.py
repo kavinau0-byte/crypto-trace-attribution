@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from . import models, schemas
 from .database import engine, get_db, Base
 from .risk_engine import compute_risk_flags
-from .sample_engine import trace_address  # SWAP: replace with Person A's real engine when ready
+from .sample_engine import trace_address  # calls Person A's real tracing_engine.trace_wallet (see sample_engine.py docstring)
 from .report_generator import generate_case_report
 
 Base.metadata.create_all(bind=engine)
