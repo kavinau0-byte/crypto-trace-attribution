@@ -1,0 +1,120 @@
+@import 'tailwindcss';
+
+@theme {
+  /* Investigation-console palette. Near-black ground, one cold accent,
+     two reserved signal colours that only appear when they mean something. */
+  --color-void: #0b0e14;
+  --color-surface: #131722;
+  --color-raised: #171d2b;
+  --color-line: #1e2433;
+  --color-line-strong: #2a3244;
+
+  --color-ink: #e6eaf2;
+  --color-ink-dim: #96a0b5;
+  --color-ink-faint: #626e86;
+
+  --color-accent: #22d3eb;
+  --color-accent-deep: #0e7490;
+  --color-alert: #f59e0b;
+  --color-match: #34d399;
+
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background-color: var(--color-void);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Address and hash strings get room to breathe — investigators read these
+   character by character, so tracking and line-height matter more than density. */
+.data {
+  font-family: var(--font-mono);
+  font-variant-ligatures: none;
+  letter-spacing: -0.01em;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-accent) 30%, transparent);
+  color: var(--color-ink);
+}
+
+*:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Thin, dark scrollbars so long hop ledgers don't get a bright gutter. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line-strong) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--color-line-strong);
+  border-radius: 6px;
+  border: 3px solid var(--color-void);
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@keyframes view-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.view-enter {
+  animation: view-enter 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes scan {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
+}
+
+/* A single travelling highlight, used only while a trace is in flight. */
+.scanline::after {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 33%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--color-accent) 55%, transparent),
+    transparent
+  );
+  animation: scan 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .view-enter,
+  .scanline::after {
+    animation: none;
+  }
+}
