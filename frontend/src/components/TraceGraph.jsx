@@ -65,10 +65,40 @@ export default function TraceGraph({ graph, matched, selectedId, onSelect }) {
     []
   )
 
-  // Frame the whole graph once the layout settles.
-  const handleEngineStop = useCallback(() => {
-    fgRef.current?.zoomToFit(600, 60)
-  }, [])
+  /*
+   * Framing the view. zoomToFit works well once there is a real spread of nodes,
+   * but on a two- or three-node trace the bounding box is so small that it puts
+   * the camera inside the sphere. Below that threshold the camera is placed at a
+   * fixed, readable distance from the origin instead, which is where the force
+   * layout centres the graph.
+   */
+  const frame = useCallback(
+    (duration) => {
+      const fg = fgRef.current
+      if (!fg) return
+      const n = graph.nodes.length
+      if (n <= 12) {
+        fg.cameraPosition({ x: 0, y: 0, z: n <= 3 ? 170 : 300 }, { x: 0, y: 0, z: 0 }, duration)
+      } else {
+        fg.zoomToFit(duration, n <= 60 ? 90 : 60)
+      }
+    },
+    [graph.nodes.length]
+  )
+
+  // Frame the graph early so a large trace isn't a blank canvas while the
+  // simulation settles, then frame it properly once it does.
+  const ticks = useRef(0)
+  useEffect(() => {
+    ticks.current = 0
+  }, [data])
+
+  const handleEngineTick = useCallback(() => {
+    ticks.current += 1
+    if (ticks.current === 20) frame(0)
+  }, [frame])
+
+  const handleEngineStop = useCallback(() => frame(600), [frame])
 
   useEffect(() => {
     // Loosen the default charge a little so dense hop levels don't overlap.
@@ -76,7 +106,22 @@ export default function TraceGraph({ graph, matched, selectedId, onSelect }) {
     if (charge) charge.strength(-90)
   }, [data])
 
-  const resetView = useCallback(() => fgRef.current?.zoomToFit(500, 60), [])
+  const resetView = useCallback(() => frame(500), [frame])
+
+  // A wide fan-out buries the query address in the middle of the cluster, so
+  // there is a direct way back to it.
+  const focusSeed = useCallback(() => {
+    const seed = graph.nodes.find((n) => n.kind === NODE_KIND.SEED)
+    if (!seed || !fgRef.current) return
+    const { x = 0, y = 0, z = 0 } = seed
+    const distance = 140
+    const radius = Math.hypot(x, y, z)
+    const camera = radius > 1
+      ? { x: (x / radius) * (radius + distance), y: (y / radius) * (radius + distance), z: (z / radius) * (radius + distance) }
+      : { x: 0, y: 0, z: distance }
+    fgRef.current.cameraPosition(camera, seed, 900)
+    onSelect?.(seed)
+  }, [graph.nodes, onSelect])
 
   return (
     <div ref={wrapRef} className="relative h-full w-full">
@@ -88,7 +133,7 @@ export default function TraceGraph({ graph, matched, selectedId, onSelect }) {
           height={height}
           backgroundColor={BACKGROUND}
           showNavInfo={false}
-          nodeRelSize={1}
+          nodeRelSize={4}
           nodeVal={nodeSize}
           nodeColor={paint}
           nodeOpacity={0.95}
@@ -107,18 +152,28 @@ export default function TraceGraph({ graph, matched, selectedId, onSelect }) {
           linkDirectionalParticleSpeed={0.006}
           linkDirectionalParticleColor={() => '#22d3eb'}
           cooldownTicks={140}
+          onEngineTick={handleEngineTick}
           onEngineStop={handleEngineStop}
           enableNodeDrag={false}
         />
       ) : null}
 
-      <button
-        type="button"
-        onClick={resetView}
-        className="absolute top-3 right-3 rounded-sm border border-line-strong bg-surface/85 px-2.5 py-1.5 text-[12px] font-medium text-ink-dim backdrop-blur-sm transition-colors hover:border-accent hover:text-accent"
-      >
-        Reset view
-      </button>
+      <div className="absolute top-3 right-3 flex gap-1.5">
+        <button
+          type="button"
+          onClick={focusSeed}
+          className="rounded-sm border border-line-strong bg-surface/85 px-2.5 py-1.5 text-[12px] font-medium text-ink-dim backdrop-blur-sm transition-colors hover:border-accent hover:text-accent"
+        >
+          Find query address
+        </button>
+        <button
+          type="button"
+          onClick={resetView}
+          className="rounded-sm border border-line-strong bg-surface/85 px-2.5 py-1.5 text-[12px] font-medium text-ink-dim backdrop-blur-sm transition-colors hover:border-accent hover:text-accent"
+        >
+          Reset view
+        </button>
+      </div>
 
       <Legend matched={matched} hasUnknownPayer={graph.hasUnknownPayer} />
 

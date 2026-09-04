@@ -44,6 +44,18 @@ npm run build     # production build into dist/
 npm run preview   # serve the production build locally
 ```
 
+### A note on hot reload
+
+This repository lives on a Windows drive (`/mnt/c/...`). Running the dev server
+from WSL there means file-change events never reach Vite, so edits silently fail
+to hot-reload until you restart. `vite.config.js` therefore enables a polling
+watcher by default. On a native Linux or macOS filesystem the default watcher is
+cheaper and sufficient — turn polling off with:
+
+```bash
+VITE_NO_POLLING=1 npm run dev
+```
+
 ## Configuration
 
 The API base URL is the only setting.

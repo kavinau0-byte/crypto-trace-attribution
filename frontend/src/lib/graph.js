@@ -185,8 +185,13 @@ export function nodeColor(node, { matched }) {
   return shades[Math.min(node.hopIndex ?? 0, shades.length - 1)]
 }
 
+/**
+ * Sphere volume, not radius — react-force-graph derives the radius as
+ * `nodeRelSize * cbrt(nodeVal)`, so these are cubed to get the visual ratio.
+ * The seed reads roughly 2.5x the radius of a hop node.
+ */
 export function nodeSize(node) {
-  if (node.kind === NODE_KIND.SEED) return 9
-  if (node.kind === NODE_KIND.UNKNOWN_PAYER) return 2.5
-  return 3.5
+  if (node.kind === NODE_KIND.SEED) return 18
+  if (node.kind === NODE_KIND.UNKNOWN_PAYER) return 0.7
+  return 1.1
 }
