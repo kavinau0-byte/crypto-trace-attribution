@@ -1,0 +1,30 @@
+# The repository-root .gitignore excludes `lib/` for Python build output, which
+# would otherwise silently drop this app's src/lib source directory.
+!src/lib/
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Local backend URL override; commit .env.example instead.
+.env
+.env.*
+!.env.example
+
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
