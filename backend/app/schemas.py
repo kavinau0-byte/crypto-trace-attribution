@@ -14,7 +14,9 @@ class Hop(BaseModel):
     hop_index: int
     address: str
     tx_hash: str
-    timestamp: str  # ISO 8601, e.g. "2026-09-01T10:08:32Z"
+    # Optional to match tracing_engine/schema.py: an unconfirmed transaction
+    # has no block time yet, so the engine emits None here.
+    timestamp: Optional[str] = None  # ISO 8601, e.g. "2026-09-01T10:08:32Z"
     amount_btc: float
 
 
