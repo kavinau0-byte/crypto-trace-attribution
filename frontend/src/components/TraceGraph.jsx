@@ -162,14 +162,14 @@ export default function TraceGraph({ graph, matched, selectedId, onSelect }) {
         <button
           type="button"
           onClick={focusSeed}
-          className="rounded-sm border border-line-strong bg-surface/85 px-2.5 py-1.5 text-[12px] font-medium text-ink-dim backdrop-blur-sm transition-colors hover:border-accent hover:text-accent"
+          className="rounded-sm border border-white/10 bg-surface/55 px-2.5 py-1.5 text-[12px] font-medium text-ink-dim backdrop-blur-md transition-[background-color,backdrop-filter,border-color,color] hover:border-accent hover:bg-surface/75 hover:text-accent hover:backdrop-blur-lg active:bg-surface/90"
         >
           Find query address
         </button>
         <button
           type="button"
           onClick={resetView}
-          className="rounded-sm border border-line-strong bg-surface/85 px-2.5 py-1.5 text-[12px] font-medium text-ink-dim backdrop-blur-sm transition-colors hover:border-accent hover:text-accent"
+          className="rounded-sm border border-white/10 bg-surface/55 px-2.5 py-1.5 text-[12px] font-medium text-ink-dim backdrop-blur-md transition-[background-color,backdrop-filter,border-color,color] hover:border-accent hover:bg-surface/75 hover:text-accent hover:backdrop-blur-lg active:bg-surface/90"
         >
           Reset view
         </button>

@@ -103,7 +103,7 @@ export default function SubmitTrace() {
 
         <button
           type="submit"
-          className="mt-8 inline-flex items-center gap-2 rounded-sm bg-accent px-5 py-2.5 text-[13px] font-semibold text-void transition-colors hover:bg-accent/85"
+          className="mt-8 inline-flex items-center gap-2 rounded-sm border border-white/10 bg-accent/75 px-5 py-2.5 text-[13px] font-semibold text-void backdrop-blur transition-[background-color,backdrop-filter] hover:bg-accent/90 hover:backdrop-blur-md active:bg-accent"
         >
           Run trace
         </button>

@@ -13,7 +13,7 @@ export default function AppShell() {
 
   return (
     <div className="flex min-h-full flex-col bg-void lg:h-full lg:flex-row">
-      <nav className="flex shrink-0 flex-row items-center gap-4 border-b border-line bg-surface px-4 py-3 lg:w-60 lg:flex-col lg:items-stretch lg:gap-0 lg:border-r lg:border-b-0 lg:px-0 lg:py-0">
+      <nav className="flex shrink-0 flex-row items-center gap-4 border-b border-white/10 bg-surface/50 px-4 py-3 backdrop-blur-md lg:w-60 lg:flex-col lg:items-stretch lg:gap-0 lg:border-r lg:border-b-0 lg:px-0 lg:py-0">
         <div className="lg:border-b lg:border-line lg:px-5 lg:py-5">
           <div className="text-[15px] font-semibold tracking-tight text-ink">
             Wallet Attribution
