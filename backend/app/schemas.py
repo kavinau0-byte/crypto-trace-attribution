@@ -14,8 +14,15 @@ class Hop(BaseModel):
     hop_index: int
     address: str
     tx_hash: str
-    timestamp: str  # ISO 8601, e.g. "2026-09-01T10:08:32Z"
+    # Optional to match tracing_engine/schema.py: an unconfirmed transaction
+    # has no block time yet, so the engine emits None here.
+    timestamp: Optional[str] = None  # ISO 8601, e.g. "2026-09-01T10:08:32Z"
     amount_btc: float
+    # The address that sent this hop's funds. The engine records the BFS node it
+    # was walking, so consumers can draw the real from->to edge instead of
+    # guessing which address at the previous level paid. Optional so hop records
+    # stored before the field existed still validate.
+    from_address: Optional[str] = None
 
 
 class TraceResult(BaseModel):

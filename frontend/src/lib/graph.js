@@ -4,28 +4,39 @@
  * ---------------------------------------------------------------------------
  * Why this file is more careful than "one edge per hop" sounds
  * ---------------------------------------------------------------------------
- * A hop record is `{ hop_index, address, tx_hash, timestamp, amount_btc }`.
- * It records the BFS *depth* at which an address was reached, and the
- * transaction that paid it — but NOT which address did the paying. For
- * hop_index 0 that is fine: the engine's BFS starts at the seed, so every
- * hop_index-0 record is unambiguously `seed -> address`.
+ * A hop record is
+ * `{ hop_index, address, tx_hash, timestamp, amount_btc, from_address }`.
+ * `from_address` is the address that actually sent the funds — the engine
+ * records the BFS node whose outgoing transaction it was following
+ * (tracing_engine/hop_tracer.py), so the payer is known exactly rather than
+ * inferred. When it is present, this file draws the real
+ * `from_address -> address` edge, which is the normal path.
  *
- * For hop_index N >= 1 the payer is one of the addresses at level N-1, and the
- * contract does not say which. On real traces this is not a corner case: a
- * live trace of a 4-transaction address at max_hops=2 produced 4 addresses at
- * level 0 and 93 addresses at level 1, so 93 edges have 4 candidate sources
- * each.
+ * The fallback below exists because `from_address` is Optional in the
+ * contract. Hop records written before the field was added — cases already
+ * persisted in the database — have it as null, and those still have to render.
+ * Historically that was the ONLY path, and it was genuinely lossy: a hop
+ * recorded the depth at which an address was reached but not who paid it, so
+ * for hop_index N >= 1 the payer was merely "one of the addresses at level
+ * N-1". On real traces that was not a corner case — a live trace of a
+ * 4-transaction address at max_hops=2 produced 4 addresses at level 0 and 93
+ * at level 1, so 93 edges had 4 candidate sources each, and all 93 were routed
+ * through a single placeholder node.
  *
- * Three options, and why this one:
+ * So, for a hop with no `from_address`:
  *   - Guessing a parent would draw fund movements that did not happen.
  *   - Drawing an edge from every candidate would multiply the edge count and
  *     still misrepresent the flow.
- *   - So: when the previous level has exactly one address, the payer IS known
- *     and the edge is drawn directly. When it has several, the edges pass
- *     through one explicit `unknown-payer` node per level, labelled in the UI
- *     as "payer not recorded". Every candidate at the previous level links
- *     into it, which is exactly the claim the data supports: one of these
- *     addresses paid onward, and the trace does not record which.
+ *   - So: when the previous level has exactly one address, the payer IS
+ *     determined and the edge is drawn directly. When it has several, those
+ *     edges pass through one explicit `unknown-payer` node per level, labelled
+ *     in the UI as "payer not recorded". Every candidate at the previous level
+ *     links into it, which is exactly the claim the data supports: one of these
+ *     addresses paid onward, and the record does not say which.
+ *
+ * The placeholder is created lazily, only for hops that actually need it, so a
+ * trace from the current engine never shows one. A mixed trace (some hops with
+ * a payer, some without) renders each hop by what its own record supports.
  *
  * Each hop record still contributes exactly one directed, labelled edge into
  * its destination address, so the hop ledger and the graph stay in step.
@@ -40,7 +51,10 @@ export const NODE_KIND = {
 export const LINK_KIND = {
   /** Straight from a hop record: this transaction paid this address. */
   HOP: 'hop',
-  /** This address sits at the previous level, so it is a possible payer. */
+  /**
+   * Fallback only: this address sits at the previous level of a hop whose
+   * record has no `from_address`, so it is a possible — not confirmed — payer.
+   */
   CANDIDATE: 'candidate',
 }
 
@@ -92,20 +106,22 @@ export function buildTraceGraph(trace) {
 
   let hasUnknownPayer = false
 
-  for (const level of levels) {
+  // The placeholder for a level is built at most once, and only if a hop at
+  // that level actually lacks a payer. Levels whose hops all carry
+  // `from_address` never create one.
+  const ensureFallbackSource = (level) => {
     const source = resolveSource({ level, seedId, addressesAtLevel })
+    if (source.kind !== NODE_KIND.UNKNOWN_PAYER) return source
 
-    if (source.kind === NODE_KIND.UNKNOWN_PAYER) {
-      hasUnknownPayer = true
-      if (!nodes.has(source.id)) {
-        nodes.set(source.id, {
-          id: source.id,
-          kind: NODE_KIND.UNKNOWN_PAYER,
-          hopIndex: level - 1,
-          candidateCount: source.candidates.length,
-          label: `Payer at hop ${level - 1} not recorded`,
-        })
-      }
+    hasUnknownPayer = true
+    if (!nodes.has(source.id)) {
+      nodes.set(source.id, {
+        id: source.id,
+        kind: NODE_KIND.UNKNOWN_PAYER,
+        hopIndex: level - 1,
+        candidateCount: source.candidates.length,
+        label: `Payer at hop ${level - 1} not recorded`,
+      })
       // Every address at the previous level is a possible payer.
       for (const candidate of source.candidates) {
         links.push({
@@ -116,7 +132,10 @@ export function buildTraceGraph(trace) {
         })
       }
     }
+    return source
+  }
 
+  for (const level of levels) {
     for (const hop of byLevel.get(level)) {
       const address = hop?.address
       if (!address) continue
@@ -131,19 +150,46 @@ export function buildTraceGraph(trace) {
         })
       }
 
-      // Defensive: never emit a self-loop if the engine ever repeats an address
-      // as its own sole predecessor.
-      if (source.id === address) continue
+      // The normal path: the record names the payer, so draw the real edge.
+      const payer = typeof hop.from_address === 'string' && hop.from_address ? hop.from_address : null
+
+      let sourceId
+      let payerKnown
+      if (payer) {
+        sourceId = payer
+        payerKnown = true
+        // The payer is normally already a node (the seed, or an address from
+        // the previous level). Create it defensively if a record ever names a
+        // payer that no hop at the previous level introduced.
+        if (!nodes.has(sourceId)) {
+          nodes.set(sourceId, {
+            id: sourceId,
+            kind: NODE_KIND.ADDRESS,
+            address: sourceId,
+            hopIndex: Math.max(level - 1, 0),
+            label: `Hop ${Math.max(level - 1, 0)}`,
+          })
+        }
+      } else {
+        // Fallback for records predating `from_address`.
+        const source = ensureFallbackSource(level)
+        sourceId = source.id
+        payerKnown = source.kind !== NODE_KIND.UNKNOWN_PAYER
+      }
+
+      // Defensive: never emit a self-loop if a record ever names an address as
+      // its own predecessor.
+      if (sourceId === address) continue
 
       links.push({
-        source: source.id,
+        source: sourceId,
         target: address,
         kind: LINK_KIND.HOP,
         hopIndex: level,
         txHash: hop.tx_hash,
         amountBtc: hop.amount_btc,
         timestamp: hop.timestamp,
-        payerKnown: source.kind !== NODE_KIND.UNKNOWN_PAYER,
+        payerKnown,
       })
     }
   }
@@ -157,6 +203,10 @@ export function buildTraceGraph(trace) {
   }
 }
 
+/**
+ * Fallback payer resolution for a hop record with no `from_address`.
+ * Only reached for data predating that field.
+ */
 function resolveSource({ level, seedId, addressesAtLevel }) {
   // Depth 0 is always spent by the seed — the BFS frontier starts there.
   if (level === 0) return { id: seedId, kind: NODE_KIND.SEED, candidates: [seedId] }

@@ -132,7 +132,104 @@ class TestHopTracerMocked(unittest.TestCase):
         self.assertIn("C", discovered_addrs, "C should be discovered from A")
         self.assertIn("D", discovered_addrs, "D should be discovered from C despite B failing")
 
-    # ---- Test 6: Live unresolved trace_wallet contract (real network) ----
+    # ---- Test 6: from_address records the real payer (single hop) ----
+    def test_from_address_single_hop(self):
+        """A hop must record WHICH address paid it, not just which was paid."""
+        txs_a = [_make_tx("tx_a_to_b", "A", ["B"])]
+
+        with patch("tracing_engine.hop_tracer.get_transactions", return_value=txs_a):
+            hops = trace_hops("A", max_hops=1)
+
+        self.assertEqual(len(hops), 1)
+        self.assertEqual(hops[0]["address"], "B")
+        self.assertEqual(hops[0]["from_address"], "A", "hop_index 0 is always paid by the seed")
+
+    # ---- Test 7: from_address across a multi-hop chain A->B->C ----
+    def test_from_address_multi_hop_chain(self):
+        """Each hop's from_address must be the node whose spends were followed."""
+        def mock_get_txs(address, session=None):
+            if address == "A":
+                return [_make_tx("tx_a_to_b", "A", ["B"])]
+            if address == "B":
+                return [_make_tx("tx_b_to_c", "B", ["C"])]
+            return []
+
+        with patch("tracing_engine.hop_tracer.get_transactions", side_effect=mock_get_txs):
+            hops = trace_hops("A", max_hops=3)
+
+        by_addr = {h["address"]: h for h in hops}
+        self.assertEqual(set(by_addr), {"B", "C"})
+        self.assertEqual(by_addr["B"]["from_address"], "A")
+        self.assertEqual(by_addr["B"]["hop_index"], 0)
+        # The payoff: C is at level 1, and the record names B specifically as the
+        # payer rather than leaving it to be guessed from the whole level.
+        self.assertEqual(by_addr["C"]["from_address"], "B")
+        self.assertEqual(by_addr["C"]["hop_index"], 1)
+
+    # ---- Test 8: from_address on the repeat-destination scenario ----
+    def test_from_address_on_repeat_real_destination(self):
+        """Both hop entries for B (two different txs) must show from_address='A'."""
+        txs_a = [
+            _make_tx("tx_first_payment", "A", ["B"]),
+            _make_tx("tx_second_payment", "A", ["B"]),
+        ]
+
+        with patch("tracing_engine.hop_tracer.get_transactions", return_value=txs_a):
+            hops = trace_hops("A", max_hops=2)
+
+        b_hops = [h for h in hops if h["address"] == "B"]
+        self.assertEqual(len(b_hops), 2)
+        self.assertEqual([h["from_address"] for h in b_hops], ["A", "A"])
+
+    # ---- Test 9: from_address populated for EVERY recorded hop, branching ----
+    def test_from_address_populated_for_every_hop(self):
+        """No recorded hop may be missing a payer, including across branches."""
+        def mock_get_txs(address, session=None):
+            if address == "A":
+                return [_make_tx("tx_a_fanout", "A", ["B", "C"])]
+            if address == "B":
+                return [_make_tx("tx_b_out", "B", ["D"])]
+            if address == "C":
+                return [_make_tx("tx_c_out", "C", ["E"])]
+            return []
+
+        with patch("tracing_engine.hop_tracer.get_transactions", side_effect=mock_get_txs):
+            hops = trace_hops("A", max_hops=3)
+
+        for h in hops:
+            self.assertIsNotNone(
+                h.get("from_address"),
+                f"hop to {h['address']} has no from_address",
+            )
+
+        expected = {"B": "A", "C": "A", "D": "B", "E": "C"}
+        self.assertEqual({h["address"]: h["from_address"] for h in hops}, expected)
+
+    # ---- Test 10: from_address survives trace_wallet's contract layer ----
+    def test_from_address_survives_trace_wallet(self):
+        """trace_wallet() re-hydrates hop dicts into HopInfo; the payer must survive.
+
+        Regression guard: that re-hydration copies fields explicitly, so a new
+        contract field is silently dropped unless it is carried through. The
+        frontend consumes trace_wallet's output, not trace_hops' directly.
+        """
+        def mock_get_txs(address, session=None):
+            if address == "A":
+                return [_make_tx("tx_a_to_b", "A", ["B"])]
+            if address == "B":
+                return [_make_tx("tx_b_to_c", "B", ["C"])]
+            return []
+
+        with patch("tracing_engine.hop_tracer.get_transactions", side_effect=mock_get_txs), \
+             patch("tracing_engine.engine.cluster_addresses", return_value=None), \
+             patch("tracing_engine.engine.match_vasp", return_value=(None, "unresolved")):
+            result = trace_wallet("A", max_hops=3)
+
+        by_addr = {h["address"]: h for h in result["hops"]}
+        self.assertEqual(by_addr["B"]["from_address"], "A")
+        self.assertEqual(by_addr["C"]["from_address"], "B")
+
+    # ---- Test 11: Live unresolved trace_wallet contract (real network) ----
     def test_trace_wallet_unresolved_live(self):
         """LIVE NETWORK TEST: Verify trace_wallet() returns well-formed unresolved contract.
 

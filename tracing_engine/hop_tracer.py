@@ -69,7 +69,8 @@ def trace_hops(
                 "address": "1Destination...",
                 "tx_hash": "9f8e7d...",
                 "timestamp": "2026-09-01T10:08:32Z",
-                "amount_btc": 0.452
+                "amount_btc": 0.452,
+                "from_address": "1Seed..."
             },
             ...
         ]
@@ -163,7 +164,12 @@ def trace_hops(
                     address=dest_addr,
                     tx_hash=tx_hash,
                     timestamp=timestamp,
-                    amount_btc=amount_btc
+                    amount_btc=amount_btc,
+                    # current_addr is the node whose outgoing transactions we are
+                    # walking, so it is by construction the address that paid
+                    # dest_addr in this tx. Recording it lets consumers rebuild the
+                    # real edge instead of guessing among the previous level.
+                    from_address=current_addr
                 )
                 hops_record.append(hop_entry.to_dict())
                 recorded_hop_keys.add(hop_key)

@@ -81,7 +81,10 @@ def trace_wallet(
             address=hop["address"],
             tx_hash=hop["tx_hash"],
             timestamp=hop.get("timestamp"),
-            amount_btc=hop.get("amount_btc", 0.0)
+            amount_btc=hop.get("amount_btc", 0.0),
+            # Carry the payer through. This re-hydration copies fields explicitly,
+            # so anything omitted here is silently dropped from the public contract.
+            from_address=hop.get("from_address")
         )
         for hop in raw_hops
     ]
