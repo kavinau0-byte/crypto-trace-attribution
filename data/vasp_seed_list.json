@@ -1,5 +1,5 @@
 {
-  "_comment": "This is a small curated seed list for hackathon demo purposes only (45 entries). It does NOT represent complete or comprehensive VASP address coverage. Addresses are sourced from public forensics trackers and disclosures as cited per-entry.",
+  "_comment": "This is a small curated seed list for hackathon demo purposes only (56 entries across 15 exchanges). It does NOT represent complete or comprehensive VASP address coverage. Addresses are sourced from public forensics trackers and disclosures as cited per-entry. Entries sourced from WalletExplorer.com record cluster membership as labelled by that service, which is an attribution by a third party, not a disclosure by the exchange.",
   "entries": [
     {
       "address": "34xp4vRoCGJym3xR7yCVPFHoCNxv4Twseo",
@@ -315,6 +315,83 @@
       "source": "Live WalletExplorer.com wallet listing: walletexplorer.com/wallet/Huobi.com/addresses",
       "confidence": "medium",
       "notes": "Huobi cluster address"
+    },
+    {
+      "address": "12JsfJ8Y6qoZvfsqu2E4nzAhNqkA2Pe4Ya",
+      "vasp_name": "Bitfinex",
+      "source": "WalletExplorer.com wallet listing (Bitfinex.com) at https://www.walletexplorer.com/wallet/Bitfinex.com/addresses; attribution re-checked per-address at https://www.walletexplorer.com/address/12JsfJ8Y6qoZvfsqu2E4nzAhNqkA2Pe4Ya",
+      "confidence": "medium",
+      "notes": "Address clustered to the Bitfinex.com wallet by WalletExplorer. 151 transactions, balance 0.00060436 BTC at time of verification. Cluster membership, not a disclosed hot/cold treasury wallet."
+    },
+    {
+      "address": "1JyLeGv4Qg9mimJcZFVrEWxJgpBwjQcWyH",
+      "vasp_name": "Bitfinex",
+      "source": "WalletExplorer.com wallet listing (Bitfinex.com) at https://www.walletexplorer.com/wallet/Bitfinex.com/addresses; attribution re-checked per-address at https://www.walletexplorer.com/address/1JyLeGv4Qg9mimJcZFVrEWxJgpBwjQcWyH",
+      "confidence": "medium",
+      "notes": "Address clustered to the Bitfinex.com wallet by WalletExplorer. 252 transactions, balance 0.00027302 BTC at time of verification. Cluster membership, not a disclosed hot/cold treasury wallet."
+    },
+    {
+      "address": "1D2jvZSUvVnQbbaHvxBqyAm4cNHA1pRoaV",
+      "vasp_name": "Bitfinex",
+      "source": "WalletExplorer.com wallet listing (Bitfinex.com) at https://www.walletexplorer.com/wallet/Bitfinex.com/addresses; attribution re-checked per-address at https://www.walletexplorer.com/address/1D2jvZSUvVnQbbaHvxBqyAm4cNHA1pRoaV",
+      "confidence": "medium",
+      "notes": "Address clustered to the Bitfinex.com wallet by WalletExplorer. 107 transactions, balance 0.00001349 BTC at time of verification. Cluster membership, not a disclosed hot/cold treasury wallet."
+    },
+    {
+      "address": "3MCMZjWAMdGqAhi1iF1oyiiE2jY5yBAYzV",
+      "vasp_name": "Kraken",
+      "source": "WalletExplorer.com wallet listing (Kraken.com) at https://www.walletexplorer.com/wallet/Kraken.com/addresses; attribution re-checked per-address at https://www.walletexplorer.com/address/3MCMZjWAMdGqAhi1iF1oyiiE2jY5yBAYzV",
+      "confidence": "medium",
+      "notes": "Address clustered to the Kraken.com wallet by WalletExplorer. 2958 transactions, balance 7.3532 BTC at time of verification. Cluster membership, not a disclosed hot/cold treasury wallet."
+    },
+    {
+      "address": "3D4Hz7F6DVhDu1AjRB6k3p3RAVBCAUsjHz",
+      "vasp_name": "Kraken",
+      "source": "WalletExplorer.com wallet listing (Kraken.com) at https://www.walletexplorer.com/wallet/Kraken.com/addresses; attribution re-checked per-address at https://www.walletexplorer.com/address/3D4Hz7F6DVhDu1AjRB6k3p3RAVBCAUsjHz",
+      "confidence": "medium",
+      "notes": "Address clustered to the Kraken.com wallet by WalletExplorer. 816 transactions, balance 0.07252347 BTC at time of verification. Cluster membership, not a disclosed hot/cold treasury wallet."
+    },
+    {
+      "address": "3G1nNTTyrpZBwyEiG6U3bJvZdu9sW3rbUz",
+      "vasp_name": "Bitstamp",
+      "source": "WalletExplorer.com wallet listing (Bitstamp.net) at https://www.walletexplorer.com/wallet/Bitstamp.net/addresses; attribution re-checked per-address at https://www.walletexplorer.com/address/3G1nNTTyrpZBwyEiG6U3bJvZdu9sW3rbUz",
+      "confidence": "medium",
+      "notes": "Address clustered to the Bitstamp.net wallet by WalletExplorer. 34139 transactions, balance 0.00002735 BTC at time of verification. Cluster membership, not a disclosed hot/cold treasury wallet."
+    },
+    {
+      "address": "3F5xyMiMityzeMVExpXXK2VZptxJUUpsXt",
+      "vasp_name": "Bitstamp",
+      "source": "WalletExplorer.com wallet listing (Bitstamp.net) at https://www.walletexplorer.com/wallet/Bitstamp.net/addresses; attribution re-checked per-address at https://www.walletexplorer.com/address/3F5xyMiMityzeMVExpXXK2VZptxJUUpsXt",
+      "confidence": "medium",
+      "notes": "Address clustered to the Bitstamp.net wallet by WalletExplorer. 2371 transactions, balance 0.00002735 BTC at time of verification. Cluster membership, not a disclosed hot/cold treasury wallet."
+    },
+    {
+      "address": "16vXbinRnzVaU4fRrx1Jz6npzjzCaiv63C",
+      "vasp_name": "LocalBitcoins",
+      "source": "WalletExplorer.com wallet listing (LocalBitcoins.com) at https://www.walletexplorer.com/wallet/LocalBitcoins.com/addresses; attribution re-checked per-address at https://www.walletexplorer.com/address/16vXbinRnzVaU4fRrx1Jz6npzjzCaiv63C",
+      "confidence": "medium",
+      "notes": "Address clustered to the LocalBitcoins.com wallet by WalletExplorer. 9271 transactions, balance 0 BTC at time of verification. Cluster membership, not a disclosed hot/cold treasury wallet."
+    },
+    {
+      "address": "18RdNBDtKH6XB9WsfMrLaHkLkg327T3Pbd",
+      "vasp_name": "LocalBitcoins",
+      "source": "WalletExplorer.com wallet listing (LocalBitcoins.com) at https://www.walletexplorer.com/wallet/LocalBitcoins.com/addresses; attribution re-checked per-address at https://www.walletexplorer.com/address/18RdNBDtKH6XB9WsfMrLaHkLkg327T3Pbd",
+      "confidence": "medium",
+      "notes": "Address clustered to the LocalBitcoins.com wallet by WalletExplorer. 4606 transactions, balance 0 BTC at time of verification. Cluster membership, not a disclosed hot/cold treasury wallet."
+    },
+    {
+      "address": "1PNfdAKFEX38ur8wD2FP63BBCcedBQyeR9",
+      "vasp_name": "CEX.IO",
+      "source": "WalletExplorer.com wallet listing (Cex.io) at https://www.walletexplorer.com/wallet/Cex.io/addresses; attribution re-checked per-address at https://www.walletexplorer.com/address/1PNfdAKFEX38ur8wD2FP63BBCcedBQyeR9",
+      "confidence": "medium",
+      "notes": "Address clustered to the Cex.io wallet by WalletExplorer. 1108 transactions, balance 0.05336842 BTC at time of verification. Cluster membership, not a disclosed hot/cold treasury wallet."
+    },
+    {
+      "address": "18SsvshJTLF7MEuBYwvGm4NZPpGAf1Cc92",
+      "vasp_name": "CEX.IO",
+      "source": "WalletExplorer.com wallet listing (Cex.io) at https://www.walletexplorer.com/wallet/Cex.io/addresses; attribution re-checked per-address at https://www.walletexplorer.com/address/18SsvshJTLF7MEuBYwvGm4NZPpGAf1Cc92",
+      "confidence": "medium",
+      "notes": "Address clustered to the Cex.io wallet by WalletExplorer. 471 transactions, balance 0.10037781 BTC at time of verification. Cluster membership, not a disclosed hot/cold treasury wallet."
     }
   ]
 }
