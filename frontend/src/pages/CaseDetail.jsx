@@ -93,7 +93,7 @@ function CaseView({ record }) {
         <a
           href={reportUrl(record.id)}
           download
-          className="inline-flex shrink-0 items-center gap-2 rounded-sm border border-line-strong px-3.5 py-2 text-[13px] font-medium text-ink transition-colors hover:border-accent hover:text-accent"
+          className="inline-flex shrink-0 items-center gap-2 rounded-sm border border-white/10 bg-surface/50 px-3.5 py-2 text-[13px] font-medium text-ink backdrop-blur-md transition-[background-color,backdrop-filter,border-color,color] hover:border-accent hover:bg-surface/70 hover:text-accent hover:backdrop-blur-lg active:bg-surface/90"
         >
           <Download size={14} strokeWidth={2} />
           Download PDF report
