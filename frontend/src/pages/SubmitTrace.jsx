@@ -1,12 +1,20 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AlertTriangle, Search } from 'lucide-react'
-import { describeApiError, submitTrace } from '../api/client'
+import { AlertTriangle, Info, Search, X } from 'lucide-react'
+import { describeApiError, isAbortError, submitTrace } from '../api/client'
 
 // Matches the backend's TraceRequest default (schemas.py). Do not diverge.
 const DEFAULT_MAX_HOPS = 4
 const MIN_MAX_HOPS = 1
 const MAX_MAX_HOPS = 8
+
+/**
+ * Depth where a trace reliably finishes in a demo-friendly time. Measured, not
+ * guessed: depth 4 on a busy address has been observed running 30+ minutes,
+ * because every extra hop multiplies the addresses fetched from mempool.space
+ * and each fetch carries its own retry/backoff (tracing_engine/fetcher.py).
+ */
+const RECOMMENDED_MAX_HOPS = 2
 
 export default function SubmitTrace() {
   const navigate = useNavigate()
@@ -14,6 +22,22 @@ export default function SubmitTrace() {
   const [maxHops, setMaxHops] = useState(DEFAULT_MAX_HOPS)
   const [pending, setPending] = useState(false)
   const [error, setError] = useState(null)
+  const [cancelled, setCancelled] = useState(false)
+
+  // Held in a ref, not state: aborting must not depend on a re-render having
+  // happened, and replacing it must never restart the request.
+  const abortRef = useRef(null)
+
+  // A trace left in flight when this screen goes away has nothing left to
+  // resolve into, so drop the connection rather than leak it.
+  useEffect(() => () => abortRef.current?.abort(), [])
+
+  const cancelTrace = useCallback(() => {
+    abortRef.current?.abort()
+    abortRef.current = null
+    setPending(false)
+    setCancelled(true)
+  }, [])
 
   async function onSubmit(event) {
     event.preventDefault()
@@ -24,17 +48,35 @@ export default function SubmitTrace() {
       return
     }
     setError(null)
+    setCancelled(false)
     setPending(true)
+
+    const controller = new AbortController()
+    abortRef.current = controller
+
     try {
-      const detail = await submitTrace({ address: trimmed, maxHops })
+      const detail = await submitTrace({
+        address: trimmed,
+        maxHops,
+        signal: controller.signal,
+      })
       navigate(`/cases/${detail.id}`, { state: { case: detail } })
     } catch (err) {
+      // Cancelling is a deliberate act, not a failure: cancelTrace has already
+      // put the screen back, so there is nothing to report here.
+      if (isAbortError(err)) return
       setError(describeApiError(err))
       setPending(false)
+    } finally {
+      if (abortRef.current === controller) abortRef.current = null
     }
   }
 
-  if (pending) return <TraceRunning address={address.trim()} maxHops={maxHops} />
+  if (pending) {
+    return (
+      <TraceRunning address={address.trim()} maxHops={maxHops} onCancel={cancelTrace} />
+    )
+  }
 
   return (
     <div className="mx-auto w-full max-w-3xl px-6 py-14 sm:py-20">
@@ -89,7 +131,33 @@ export default function SubmitTrace() {
             hop multiplies the addresses that have to be fetched from mempool.space,
             so busy addresses at higher depths can take several minutes.
           </p>
+          {maxHops > RECOMMENDED_MAX_HOPS ? (
+            <p className="mt-2 flex items-start gap-2 text-[12px] leading-relaxed text-ink-faint">
+              <Info size={13} strokeWidth={2} className="mt-0.5 shrink-0" />
+              <span>
+                Depth {RECOMMENDED_MAX_HOPS} is the most predictable for timing. A busy
+                address at depth 4 has been measured running 30+ minutes. Higher depths
+                still work — you can cancel a run that is taking too long.
+              </span>
+            </p>
+          ) : null}
         </div>
+
+        {cancelled ? (
+          <div className="mt-7 flex items-start gap-2.5 rounded-md border border-line bg-surface px-4 py-3">
+            <Info size={15} strokeWidth={2} className="mt-0.5 shrink-0 text-ink-faint" />
+            <div>
+              <p className="text-[13px] leading-relaxed text-ink">
+                Trace cancelled. This page stopped waiting for it.
+              </p>
+              <p className="mt-1 text-[12px] leading-relaxed text-ink-faint">
+                The backend finishes a trace it has already started, so if this one
+                completes it will still show up under Cases. Lowering the hop depth is
+                the reliable way to get a faster result.
+              </p>
+            </div>
+          </div>
+        ) : null}
 
         {error ? (
           <div
@@ -117,7 +185,7 @@ export default function SubmitTrace() {
  * minutes. The wait shows elapsed time and what the engine is doing, so a slow
  * trace never reads as a frozen page.
  */
-function TraceRunning({ address, maxHops }) {
+function TraceRunning({ address, maxHops, onCancel }) {
   const [elapsed, setElapsed] = useState(0)
   const startedAt = useRef(Date.now())
 
@@ -146,11 +214,21 @@ function TraceRunning({ address, maxHops }) {
 
       <div className="scanline relative mt-5 h-0.5 overflow-hidden rounded-full bg-line" />
 
-      <div className="mt-8 flex items-baseline gap-3">
-        <span className="data text-[32px] tabular-nums text-ink">
-          {minutes}:{seconds}
-        </span>
-        <span className="text-[13px] text-ink-faint">elapsed</span>
+      <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-baseline gap-3">
+          <span className="data text-[32px] tabular-nums text-ink">
+            {minutes}:{seconds}
+          </span>
+          <span className="text-[13px] text-ink-faint">elapsed</span>
+        </div>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="inline-flex shrink-0 items-center gap-2 rounded-sm border border-white/10 bg-surface/50 px-3.5 py-2 text-[13px] font-medium text-ink backdrop-blur-md transition-[background-color,backdrop-filter,border-color,color] hover:border-alert hover:bg-surface/70 hover:text-alert hover:backdrop-blur-lg active:bg-surface/90"
+        >
+          <X size={14} strokeWidth={2} />
+          Cancel trace
+        </button>
       </div>
 
       <div className="mt-8 space-y-2.5 border-t border-line pt-6">
@@ -168,7 +246,9 @@ function TraceRunning({ address, maxHops }) {
       </div>
 
       <p className="mt-6 text-[12px] leading-relaxed text-ink-faint">
-        Keep this tab open. The case is saved when the trace finishes.
+        Keep this tab open. The case is saved when the trace finishes. Cancelling
+        stops this page waiting; the backend still finishes the run it started, so a
+        cancelled trace may still appear under Cases.
       </p>
     </div>
   )
