@@ -1,9 +1,98 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import ForceGraph3D from 'react-force-graph-3d'
-import { LINK_KIND, NODE_KIND, nodeColor, nodeSize } from '../lib/graph'
+// `three` is already in the tree as react-force-graph-3d's own dependency, held
+// at a single version by the `three` override in package.json (a second copy is
+// what caused the duplicate-three bug fixed in 03e7cfd). Building a custom node
+// object requires it; this adds no new package.
+import * as THREE from 'three'
+import {
+  LINK_KIND,
+  NODE_KIND,
+  nodeColor,
+  nodeSize,
+  particleColor,
+  particleCount,
+} from '../lib/graph'
 import { formatBtc, truncateMiddle } from '../lib/format'
 
 const BACKGROUND = '#0b0e14'
+
+/** Passed to ForceGraph3D and reused to size the halo from the same radius. */
+const NODE_REL_SIZE = 4
+
+/**
+ * Particle speed is progress-along-the-edge per frame, so 0.006 is a ~2.8s
+ * traverse at 60fps: slow enough to read as direction, far from strobing.
+ */
+const PARTICLE_SPEED = 0.006
+/** Roughly an eighth of a hop node's radius — an accent on the line, not a bead. */
+const PARTICLE_WIDTH = 1.1
+
+/**
+ * Halo. A sprite with a radial-gradient texture, so the edge falls off to
+ * nothing instead of ending on the hard rim a scaled-up sphere would give.
+ * One texture is built lazily and shared by every halo that ever renders.
+ */
+const HALO_SCALE = 4.2 // multiples of the node's rendered radius
+const HALO_OPACITY = 0.38
+
+let haloTexture = null
+function getHaloTexture() {
+  if (haloTexture) return haloTexture
+  const size = 128
+  const canvas = document.createElement('canvas')
+  canvas.width = size
+  canvas.height = size
+  const ctx = canvas.getContext('2d')
+  const mid = size / 2
+  const gradient = ctx.createRadialGradient(mid, mid, 0, mid, mid, mid)
+  // White here; the sprite material tints it. Alpha does the shaping.
+  gradient.addColorStop(0, 'rgba(255,255,255,0.55)')
+  gradient.addColorStop(0.35, 'rgba(255,255,255,0.16)')
+  gradient.addColorStop(1, 'rgba(255,255,255,0)')
+  ctx.fillStyle = gradient
+  ctx.fillRect(0, 0, size, size)
+  haloTexture = new THREE.CanvasTexture(canvas)
+  return haloTexture
+}
+
+/**
+ * Which nodes get a halo. matched_vasp is attributed to the seed and never to
+ * a hop node (tracing_engine/engine.py), so today this is exactly the seed —
+ * keyed on the property as well as the kind so it still holds if that changes.
+ */
+function hasHalo(node) {
+  return node?.kind === NODE_KIND.SEED || Boolean(node?.matchedVasp)
+}
+
+/**
+ * A halo sized from the node it sits behind. Additive blending over the
+ * near-black ground reads as light rather than as a grey disc, and
+ * `depthWrite: false` keeps it from punching a hole in what is behind it.
+ */
+function makeHalo(node, color) {
+  const sprite = new THREE.Sprite(
+    new THREE.SpriteMaterial({
+      map: getHaloTexture(),
+      color: new THREE.Color(color),
+      transparent: true,
+      opacity: HALO_OPACITY,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    })
+  )
+  // Matches how the library derives a node's radius: nodeRelSize * cbrt(nodeVal).
+  const radius = NODE_REL_SIZE * Math.cbrt(nodeSize(node) || 1)
+  const extent = radius * HALO_SCALE
+  sprite.scale.set(extent, extent, 1)
+  sprite.renderOrder = -1 // behind the node sphere
+  // The glow is decoration, not a target. A sprite raycasts against its whole
+  // quad including the transparent falloff, which here is several times the
+  // node's width — leaving it hittable would let the halo swallow clicks aimed
+  // at the background or at a neighbouring node.
+  sprite.raycast = () => {}
+  return sprite
+}
 
 /** Track the panel size so the canvas fills it and follows window resizes. */
 function useElementSize() {
@@ -37,6 +126,31 @@ export default function TraceGraph({ graph, matched, selectedId, onSelect }) {
   )
 
   const paint = useCallback((node) => nodeColor(node, { matched }), [matched])
+
+  // One budget decision for the whole graph, not per edge: `particleCount`
+  // needs the total edge count, and recomputing it per accessor call would be
+  // a per-frame cost for a value that only changes when the trace does.
+  const linkCount = data.links.length
+  const particlesPerLink = useCallback(
+    (link) => particleCount(link, linkCount),
+    [linkCount]
+  )
+
+  /**
+   * The halo. `nodeThreeObjectExtend` keeps the library's own sphere and adds
+   * this as a child, so node colour, sizing and hit-testing are untouched.
+   *
+   * Returning null for everything else means those nodes take the default path
+   * and cost nothing extra. Both accessors are memoised because the library
+   * rebuilds every node object whenever their identity changes.
+   */
+  const nodeHalo = useCallback(
+    (node) => (hasHalo(node) ? makeHalo(node, nodeColor(node, { matched })) : null),
+    [matched]
+  )
+  // Predicate only — deliberately does NOT call nodeHalo, which would build and
+  // discard a sprite (and its material) for every node on every rebuild.
+  const extendNodeObject = useCallback(hasHalo, [])
 
   const nodeLabel = useCallback((node) => {
     if (node.kind === NODE_KIND.UNKNOWN_PAYER) {
@@ -133,9 +247,11 @@ export default function TraceGraph({ graph, matched, selectedId, onSelect }) {
           height={height}
           backgroundColor={BACKGROUND}
           showNavInfo={false}
-          nodeRelSize={4}
+          nodeRelSize={NODE_REL_SIZE}
           nodeVal={nodeSize}
           nodeColor={paint}
+          nodeThreeObject={nodeHalo}
+          nodeThreeObjectExtend={extendNodeObject}
           nodeOpacity={0.95}
           nodeResolution={12}
           nodeLabel={nodeLabel}
@@ -147,10 +263,10 @@ export default function TraceGraph({ graph, matched, selectedId, onSelect }) {
           linkOpacity={0.55}
           linkDirectionalArrowLength={(l) => (l.kind === LINK_KIND.CANDIDATE ? 0 : 3)}
           linkDirectionalArrowRelPos={1}
-          linkDirectionalParticles={(l) => (l.kind === LINK_KIND.HOP ? 2 : 0)}
-          linkDirectionalParticleWidth={1.1}
-          linkDirectionalParticleSpeed={0.006}
-          linkDirectionalParticleColor={() => '#22d3eb'}
+          linkDirectionalParticles={particlesPerLink}
+          linkDirectionalParticleWidth={PARTICLE_WIDTH}
+          linkDirectionalParticleSpeed={PARTICLE_SPEED}
+          linkDirectionalParticleColor={particleColor}
           cooldownTicks={140}
           onEngineTick={handleEngineTick}
           onEngineStop={handleEngineStop}

@@ -9,7 +9,17 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { buildTraceGraph, NODE_KIND, LINK_KIND } from './graph.js'
+import {
+  buildTraceGraph,
+  NODE_KIND,
+  LINK_KIND,
+  particleCount,
+  particleColor,
+  PARTICLE_COLOR_KNOWN,
+  PARTICLE_COLOR_UNKNOWN,
+  PARTICLE_MAX_EDGES,
+  PARTICLE_RICH_MAX_EDGES,
+} from './graph.js'
 
 const SEED = 'seed_addr'
 
@@ -138,4 +148,65 @@ test('an empty trace returns an empty graph', () => {
   const g = buildTraceGraph({ query_address: '', hops: [] })
   assert.deepEqual(g.nodes, [])
   assert.deepEqual(g.links, [])
+})
+
+/* --------------------------------------------------------------------------
+ * Flow particles
+ * ------------------------------------------------------------------------ */
+
+test('particles travel payer -> recipient, matching the link direction', () => {
+  // three-forcegraph moves a particle along `source + (target - source) * t`
+  // with t advancing by a POSITIVE linkDirectionalParticleSpeed each frame, so
+  // "source is the payer" is what makes the animation show real fund movement.
+  const hops = [hop(0, 'A1', SEED), hop(1, 'B1', 'A1')]
+  const g = buildTraceGraph({ query_address: SEED, hops })
+
+  for (const h of hops) {
+    const l = hopLinks(g).find((x) => x.target === h.address)
+    assert.equal(l.source, h.from_address, 'edge must start at the recorded payer')
+    assert.equal(l.target, h.address, 'edge must end at the address that was paid')
+    assert.notEqual(l.source, l.target)
+  }
+})
+
+test('candidate edges carry no particles', () => {
+  // A candidate edge means "this address might have paid". Animating flow along
+  // it would assert a transfer the trace never observed.
+  const g = buildTraceGraph({
+    query_address: SEED,
+    hops: [hop(0, 'A1', null), hop(0, 'A2', null), hop(1, 'B', null)],
+  })
+  const candidates = g.links.filter((l) => l.kind === LINK_KIND.CANDIDATE)
+  assert.ok(candidates.length > 0, 'fixture should produce candidate edges')
+  for (const l of candidates) assert.equal(particleCount(l, g.links.length), 0)
+})
+
+test('particle colour separates known from unknown payers', () => {
+  const g = buildTraceGraph({
+    query_address: SEED,
+    hops: [hop(0, 'A1', SEED), hop(0, 'A2', SEED), hop(1, 'B1', 'A1'), hop(1, 'B2', null)],
+  })
+  assert.equal(particleColor(edge(g, 'B1')), PARTICLE_COLOR_KNOWN)
+  assert.equal(particleColor(edge(g, 'B2')), PARTICLE_COLOR_UNKNOWN)
+  // Level 0 is unambiguous even without from_address: the seed spent it.
+  assert.equal(particleColor(edge(g, 'A1')), PARTICLE_COLOR_KNOWN)
+})
+
+test('particle density steps down as the graph grows, then off', () => {
+  const link = { kind: LINK_KIND.HOP, payerKnown: true }
+  assert.equal(particleCount(link, 10), 3, 'small graph gets the richer flow')
+  assert.equal(particleCount(link, PARTICLE_RICH_MAX_EDGES), 3)
+  assert.equal(particleCount(link, PARTICLE_RICH_MAX_EDGES + 1), 2)
+  assert.equal(particleCount(link, PARTICLE_MAX_EDGES), 2)
+  assert.equal(particleCount(link, PARTICLE_MAX_EDGES + 1), 0, 'past budget: static edges')
+  // The real 1776-hop case must land in the "off" band.
+  assert.equal(particleCount(link, 1776), 0)
+})
+
+test('particle count never exceeds 3 per edge at any graph size', () => {
+  const link = { kind: LINK_KIND.HOP, payerKnown: true }
+  for (const n of [1, 50, 119, 120, 121, 399, 400, 401, 5000]) {
+    const c = particleCount(link, n)
+    assert.ok(c >= 0 && c <= 3, `${n} edges -> ${c} particles`)
+  }
 })

@@ -235,6 +235,54 @@ export function nodeColor(node, { matched }) {
   return shades[Math.min(node.hopIndex ?? 0, shades.length - 1)]
 }
 
+/* ---------------------------------------------------------------------------
+ * Flow particles
+ * ---------------------------------------------------------------------------
+ * Styling only — none of this changes which nodes or edges exist.
+ *
+ * Particles ride the edge from its `source` to its `target`. In
+ * `buildTraceGraph` the source is the payer and the target is the address that
+ * was paid, so a particle travels in the direction the funds actually moved.
+ * (three-forcegraph interpolates `source + (target - source) * t` with `t`
+ * advancing by `linkDirectionalParticleSpeed` each frame, so a POSITIVE speed
+ * is what makes that hold — see TraceGraph.jsx.)
+ */
+
+/** --color-accent. The payer for this edge is recorded, so the flow is exact. */
+export const PARTICLE_COLOR_KNOWN = '#22d3eb'
+/** Dim neutral: the edge is real, but it leaves the "payer not recorded" node. */
+export const PARTICLE_COLOR_UNKNOWN = '#5e6b84'
+
+/**
+ * Edge-count budget for particles. Every particle is its own mesh, so the
+ * scene cost is `edges x particles`, not `edges`. Past the cutoff the graph
+ * keeps its static edges and drops the flow animation rather than dropping
+ * frames — a stuttering graph reads as broken, a still one only reads as still.
+ */
+export const PARTICLE_RICH_MAX_EDGES = 120
+export const PARTICLE_MAX_EDGES = 400
+
+/**
+ * Particles per edge, given how many edges the whole graph has.
+ * Candidate edges get none: they mean "this address might have paid", and
+ * animating flow along them would assert a transfer the trace never observed.
+ */
+export function particleCount(link, linkCount) {
+  if (link?.kind !== LINK_KIND.HOP) return 0
+  if (linkCount > PARTICLE_MAX_EDGES) return 0
+  return linkCount <= PARTICLE_RICH_MAX_EDGES ? 3 : 2
+}
+
+/**
+ * Cyan where the hop record names its payer, dim grey where it does not, so
+ * the known/unknown-payer distinction the graph already draws structurally is
+ * reinforced by the animation rather than washed out by it.
+ */
+export function particleColor(link) {
+  if (link?.kind !== LINK_KIND.HOP) return PARTICLE_COLOR_UNKNOWN
+  return link.payerKnown === false ? PARTICLE_COLOR_UNKNOWN : PARTICLE_COLOR_KNOWN
+}
+
 /**
  * Sphere volume, not radius — react-force-graph derives the radius as
  * `nodeRelSize * cbrt(nodeVal)`, so these are cubed to get the visual ratio.
