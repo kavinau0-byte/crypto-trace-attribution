@@ -21,12 +21,20 @@ class HopInfo:
         tx_hash: The transaction identifier (txid) linking the hop.
         timestamp: ISO-8601 UTC timestamp string (e.g. '2026-09-01T10:08:32Z') or None if unconfirmed.
         amount_btc: The amount transferred to the destination address in BTC.
+        from_address: The address that SENT the funds in this hop, i.e. the BFS
+            node whose outgoing transaction was being followed when this hop was
+            recorded. At hop_index 0 this is always the seed address. At
+            hop_index >= 1 it is the specific address at the previous level that
+            actually paid — which consumers cannot otherwise infer, since a level
+            may hold many addresses. Optional because hop records produced before
+            this field existed do not carry it.
     """
     hop_index: int
     address: str
     tx_hash: str
     timestamp: Optional[str]
     amount_btc: float
+    from_address: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert HopInfo to a standard dictionary."""
