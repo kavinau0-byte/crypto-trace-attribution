@@ -10,6 +10,7 @@ import CopyButton from '../components/CopyButton'
 const TraceGraph = lazy(() => import('../components/TraceGraph'))
 import { ConfidenceMeter, Field, Panel, RiskFlags, Skeleton } from '../components/Indicators'
 import { buildTraceGraph, NODE_KIND } from '../lib/graph'
+import { useCountUp } from '../lib/useCountUp'
 import { formatBtc, formatDateTime, formatTimestamp, matchMethodLabel, relativeTime } from '../lib/format'
 
 const EXPLORER_TX = 'https://mempool.space/tx/'
@@ -113,7 +114,7 @@ function CaseView({ record }) {
             )}
           </Field>
           <Field label="Confidence">
-            <ConfidenceMeter value={trace.confidence} width="w-28" />
+            <ConfidenceMeter value={trace.confidence} width="w-28" animate />
           </Field>
           <Field label="Match method">{matchMethodLabel(trace.match_method)}</Field>
           <Field label="Risk signals">
@@ -136,9 +137,7 @@ function CaseView({ record }) {
         bodyClassName=""
         action={
           hops.length ? (
-            <span className="data text-[12px] tabular-nums text-ink-faint">
-              {graph.addressCount} addresses · {hops.length} hops
-            </span>
+            <GraphCounts addresses={graph.addressCount} hops={hops.length} />
           ) : null
         }
       >
@@ -165,6 +164,20 @@ function CaseView({ record }) {
 
       {hops.length ? <HopLedger hops={hops} /> : null}
     </div>
+  )
+}
+
+/**
+ * Both counters share one duration, so they finish together. `tabular-nums`
+ * (already on this text) keeps the digits from reflowing while they climb.
+ */
+function GraphCounts({ addresses, hops }) {
+  const shownAddresses = Math.round(useCountUp(addresses))
+  const shownHops = Math.round(useCountUp(hops))
+  return (
+    <span className="data text-[12px] tabular-nums text-ink-faint">
+      {shownAddresses} addresses · {shownHops} hops
+    </span>
   )
 }
 

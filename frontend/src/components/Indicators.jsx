@@ -1,12 +1,22 @@
 import { formatConfidence, matchMethodLabel, riskFlagLabel } from '../lib/format'
+import { useCountUp } from '../lib/useCountUp'
 
 /**
  * Confidence reads as a bounded score, never as a percentage certainty about a
  * named entity. The bar is a magnitude cue; the number stays authoritative.
  */
-export function ConfidenceMeter({ value, width = 'w-24', showValue = true }) {
+export function ConfidenceMeter({ value, width = 'w-24', showValue = true, animate = false }) {
   const n = Number(value)
   const safe = Number.isFinite(n) ? Math.min(Math.max(n, 0), 1) : 0
+
+  // The bar and the readout are rendered from this ONE number, so they cannot
+  // disagree — there is no second animation to keep in step. `animate` is
+  // opt-in: the case table renders many of these at once and counting every
+  // row up would be noise, so only the detail view asks for it.
+  const shown = useCountUp(safe, { duration: animate ? undefined : 0 })
+
+  // Keyed to the real value, not the animated one, so the resting appearance
+  // (including the 4% floor that keeps a tiny score visible) is unchanged.
   const resolved = safe > 0
 
   return (
@@ -14,11 +24,11 @@ export function ConfidenceMeter({ value, width = 'w-24', showValue = true }) {
       <span className={`relative h-1 ${width} overflow-hidden rounded-full bg-line`}>
         <span
           className={`absolute inset-y-0 left-0 rounded-full ${resolved ? 'bg-accent' : 'bg-line-strong'}`}
-          style={{ width: `${Math.max(safe * 100, resolved ? 4 : 0)}%` }}
+          style={{ width: `${Math.max(shown * 100, resolved ? 4 : 0)}%` }}
         />
       </span>
       {showValue ? (
-        <span className="data text-[12px] tabular-nums text-ink-dim">{formatConfidence(value)}</span>
+        <span className="data text-[12px] tabular-nums text-ink-dim">{formatConfidence(shown)}</span>
       ) : null}
     </span>
   )
